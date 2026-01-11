@@ -1,3 +1,4 @@
+#prueba de github
 <?php $activePage = 'validacion'; ?>
 <?php
 require_once __DIR__ . '/app/auth.php';
