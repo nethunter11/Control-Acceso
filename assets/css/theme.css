@@ -1,0 +1,508 @@
+:root{
+  /* Base (similar Better Uptime) */
+  --bg: #151C28;        /* fondo principal */
+  --panel: #1C2433;     /* panel/card */
+  --panel2: #121826;    /* sidebar */
+  --panel3: #202A3C;    /* hover/inputs */
+
+  /* Bordes y sombras (sutiles, no neón) */
+  --border: rgba(255,255,255,.08);
+  --border2: rgba(255,255,255,.12);
+  --shadow: 0 18px 50px rgba(0,0,0,.35);
+
+  /* Texto (alta legibilidad) */
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.68);
+  --muted2: rgba(255,255,255,.52);
+
+  /* Acento sobrio (azul grisáceo) */
+  --accent: #5B7CFF;
+  --accent-soft: rgba(91,124,255,.18);
+
+  /* Estados */
+  --accent2: #22c55e;   /* success */
+  --warn: #f59e0b;
+  --danger: #ef4444;
+}
+
+/* Fondo: sin gradientes “llamativos” */
+body{
+  background: radial-gradient(900px 500px at 35% -10%, rgba(91,124,255,.10), transparent 60%),
+              radial-gradient(700px 450px at 80% 10%, rgba(255,255,255,.06), transparent 60%),
+              var(--bg);
+  color: var(--text);
+}
+
+.app{ display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar{
+  width: 280px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 55%), var(--panel2);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding: 0 16px 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.brand img{
+  width:40px;
+  height:40px;
+  object-fit:contain;
+  filter: drop-shadow(0 10px 26px rgba(0,0,0,.40));
+}
+.brand-title{
+  font-weight: 800;
+  letter-spacing: .08em;
+  font-size: 12px;
+}
+.brand-sub{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sidebar .nav-link{
+  color: rgba(255,255,255,.78);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 6px 8px;
+  border: 1px solid transparent;
+}
+.sidebar .nav-link:hover{
+  background: rgba(255,255,255,.05);
+  border-color: var(--border);
+  color: var(--text);
+}
+.sidebar .nav-link.active{
+  background: var(--accent-soft);
+  border: 1px solid rgba(91,124,255,.28);
+  color: var(--text);
+}
+
+.sidebar-footer{
+  position:absolute;
+  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.status-dot{
+  width:10px; height:10px; border-radius:50%;
+  background: var(--accent2);
+  box-shadow: 0 0 0 6px rgba(34,197,94,.10);
+}
+
+/* MAIN */
+.main{ flex:1; display:flex; flex-direction:column; }
+
+/* TOPBAR */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(28,36,51,.65);
+  backdrop-filter: blur(10px);
+}
+
+.topbar-search{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+.topbar-search input{
+  width:100%;
+  border:0;
+  outline:none;
+  background: transparent;
+  color: var(--text);
+}
+.topbar-search i{ color: var(--muted); }
+
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+.userchip{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  color: var(--text);
+}
+
+.content{ padding: 18px; }
+
+/* CARDS */
+.card-dark{
+  background: rgba(28,36,51,.72);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.card-header-dark{
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* Inputs */
+.form-control-dark, .form-select.form-control-dark{
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+.form-control-dark::placeholder{ color: rgba(255,255,255,.40) !important; }
+
+/* Chips / pills */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Badge “soft” */
+.badge-soft{
+  background: var(--accent-soft);
+  border: 1px solid rgba(91,124,255,.28);
+  color: var(--text);
+}
+
+/* Panel resultado */
+.panel{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--text);
+}
+
+/* Tabla */
+.table-wrap .table{ border-radius: 12px; overflow:hidden; }
+.table-dark{
+  --bs-table-bg: rgba(255,255,255,.02);
+  --bs-table-border-color: var(--border);
+}
+.table-dark, .table-dark th, .table-dark td{ color: var(--text) !important; }
+.table-dark thead th{ color: rgba(255,255,255,.85) !important; }
+
+/* Bootstrap muted */
+.text-muted, .small.text-muted{ color: var(--muted) !important; }
+
+/* Sidebar colapsable */
+.sidebar.collapsed{ width: 86px; }
+.sidebar.collapsed .brand-text,
+.sidebar.collapsed .nav-link span{ display:none; }
+
+/* Labels de formulario (RUT / Puesto) */
+.form-label,
+label {
+  color: #fff !important;
+}
+
+/* Boton (peatonal/Vehiculo) */
+.btn-group .btn.active{
+  background: rgb(13, 110, 253) !important;
+  border-color: rgba(255, 255, 255, 0.552) !important;
+}
+
+/* FIX: opciones del <select> en modo oscuro */
+.form-select.form-control-dark,
+.form-select.form-control-dark:focus{
+  color: var(--text) !important;
+  background-color: rgba(255,255,255,.05) !important;
+  border-color: var(--border) !important;
+}
+
+/* El dropdown (opciones) */
+.form-select.form-control-dark option{
+  background-color: #bf0e0ed1;   /* panel oscuro */
+  color: #ffffff;             /* texto visible */
+}
+
+/* fallback extra para navegadores que aplican estilos raros al option */
+select.form-control-dark{
+  color-scheme: dark;
+}
+
+/* Fuerza controles nativos (select/date) a tema oscuro */
+.form-control-dark,
+.form-select.form-control-dark{
+  color-scheme: dark;
+}
+
+/* Botón LOGOUT estilo "pill" con ícono (tipo referencia) */
+.logout-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  height: 34px;
+  padding: 0 14px 0 0;
+  border-radius: 999px;
+  text-decoration:none;
+  user-select:none;
+
+  background: linear-gradient(180deg, #0B2B57, #041E42);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+}
+
+.logout-btn:hover{
+  filter: brightness(1.05);
+}
+
+.logout-ico{
+  width: 40px;
+  height: 34px;
+  border-radius: 999px 0 0 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background: rgba(0,0,0,.18);
+  border-right: 1px solid rgba(255,255,255,.14);
+}
+
+.logout-ico i{
+  color: #fff;
+  font-size: 16px;
+}
+
+.logout-text{
+  color:#fff;
+  font-weight: 800;
+  letter-spacing: .06em;
+  font-size: 12px;
+}
+
+/* Estado servicio DB */
+.status-dot.off{
+  background: var(--danger);
+  box-shadow: 0 0 0 6px rgba(239,68,68,.12);
+}
+
+
+
+/* Tarjeta funcionario */
+.func-card{
+  padding: 18px;
+}
+
+.func-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.func-title{
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  line-height: 1.2;
+}
+
+.func-subtitle{
+  margin-top: 4px;
+  color: rgba(255,255,255,.60);
+  font-size: 13px;
+}
+
+.func-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.func-item{
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.func-label{
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+}
+
+.func-value{
+  color: rgba(255,255,255,.92);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Badges más pro */
+.func-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  font-size: 12px;
+}
+
+.func-badge.ok{
+  background: rgba(34,197,94,.16);
+  border: 1px solid rgba(34,197,94,.35);
+  color: rgba(255,255,255,.92);
+}
+
+.func-badge.bad{
+  background: rgba(239,68,68,.16);
+  border: 1px solid rgba(239,68,68,.35);
+  color: rgba(255,255,255,.92);
+}
+
+/* ICONO FOTO DE FUNCIONARIO EN CONSULTA */
+.func-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.func-avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: contain;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+
+/* Franja lateral por estado */
+.func-card{
+  position: relative;
+  padding-left: 18px; /* espacio para que no tape contenido */
+  overflow: hidden;
+}
+
+/* La franja */
+.func-card::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  background: rgba(255,255,255,.12); /* default */
+}
+
+/* Verde = ACTIVO */
+.func-card.is-ok::before{
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34,197,94,.12);
+}
+
+/* Rojo = INACTIVO */
+.func-card.is-bad::before{
+  background: #ef4444;
+  box-shadow: 0 0 0 6px rgba(239,68,68,.12);
+}
+
+
+/* Iconos dentro de labels */
+.func-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.func-label i{
+  font-size: 14px;
+  color: rgba(255,255,255,.75);
+}
+
+/* === Grid "pro" en la ficha === */
+.func-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+
+.func-item{
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.func-top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom: 8px;
+}
+
+.func-top i{
+  width: 26px;
+  height: 26px;
+  display:grid;
+  place-items:center;
+  border-radius: 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.80);
+}
+
+.func-label{
+  color: rgba(255,255,255,.60);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.func-value{
+  color: rgba(255,255,255,.95);
+  font-size: 18px;      /* valor más destacado */
+  font-weight: 800;
+  letter-spacing: .2px;
+  line-height: 1.25;
+}
+
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
