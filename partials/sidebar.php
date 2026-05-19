@@ -39,7 +39,7 @@ $rol = strtoupper($_SESSION['user']['rol'] ?? '');
     <?php endif; ?>
 
     <?php if ($rol === 'ADMIN'): ?>
-    <a class="nav-link <?= ($activePage==='config' ? 'active' : '') ?>" href="#">
+    <a class="nav-link <?= ($activePage==='config' ? 'active' : '') ?>" href="configuraciones.php">
       <i class="bi bi-gear me-2"></i>Configuración
     </a>
     <?php endif; ?>
