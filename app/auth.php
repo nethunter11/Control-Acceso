@@ -62,3 +62,19 @@ function csrf_validate(?string $token): bool {
     && isset($_SESSION['csrf_token'])
     && hash_equals($_SESSION['csrf_token'], $token);
 }
+
+function auth_role(): string {
+  $u = auth_user();
+  return strtoupper($u['rol'] ?? '');
+}
+
+function require_roles(array $allowed) {
+  require_login();
+  $role = auth_role();
+  $allowed = array_map('strtoupper', $allowed);
+
+  if (!in_array($role, $allowed, true)) {
+    header('Location: /Control-Acceso/home.php');
+    exit;
+  }
+}

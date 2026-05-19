@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/db.php';
+require_once __DIR__ . '/../app/auth.php';
+
+require_roles(['ADMIN','GUARDIA','AUDITOR']);
 
 try {
   $pdo = db();

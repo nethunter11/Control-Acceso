@@ -1,6 +1,8 @@
 <?php
-// $activePage debe venir definido desde la página (index.php / registros.php)
 $activePage = $activePage ?? '';
+
+// Rol del usuario (desde sesión)
+$rol = strtoupper($_SESSION['user']['rol'] ?? '');
 ?>
 <aside class="sidebar" id="sidebar">
   <div class="brand">
@@ -12,25 +14,35 @@ $activePage = $activePage ?? '';
   </div>
 
   <nav class="nav flex-column px-2">
+    <?php if (in_array($rol, ['ADMIN','GUARDIA'], true)): ?>
     <a class="nav-link <?= ($activePage==='validacion' ? 'active' : '') ?>" href="index.php">
       <i class="bi bi-shield-check me-2"></i>Validación
     </a>
+    <?php endif; ?>
 
+    <?php if (in_array($rol, ['ADMIN','CONTROL_VISITA'], true)): ?>
     <a class="nav-link <?= ($activePage==='visitas' ? 'active' : '') ?>" href="visitas.php">
       <i class="bi bi-people me-2"></i>Visitas
     </a>
+    <?php endif; ?>
 
+    <?php if (in_array($rol, ['ADMIN','GUARDIA','AUDITOR'], true)): ?>
     <a class="nav-link <?= ($activePage==='registros' ? 'active' : '') ?>" href="registros.php">
       <i class="bi bi-journal-text me-2"></i>Registros
     </a>
+    <?php endif; ?>
 
-    <a class="nav-link <?= ($activePage==='reportes' ? 'active' : '') ?>" href="#">
-      <i class="bi bi-clipboard-data me-2"></i>Reportes
+    <?php if (in_array($rol, ['ADMIN','AUDITOR'], true)): ?>
+    <a class="nav-link <?= (($activePage ?? '')==='reportes' ? 'active' : '') ?>" href="/Control-Acceso/reportes.php">
+      <i class="bi bi-clipboard-data me-2"></i><span>Reportes</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($rol === 'ADMIN'): ?>
     <a class="nav-link <?= ($activePage==='config' ? 'active' : '') ?>" href="#">
       <i class="bi bi-gear me-2"></i>Configuración
     </a>
+    <?php endif; ?>
   </nav>
 
   <div class="sidebar-footer">

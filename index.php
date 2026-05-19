@@ -1,8 +1,8 @@
-#prueba de github
 <?php $activePage = 'validacion'; ?>
 <?php
 require_once __DIR__ . '/app/auth.php';
 require_login();
+require_roles(['ADMIN','GUARDIA']);   // ✅ Solo ADMIN y GUARDIA
 $activePage = 'validacion';
 ?>
 
@@ -37,7 +37,7 @@ $activePage = 'validacion';
       <section class="content">
         <div class="row g-3">
           <!-- CARD: Validar -->
-          <div class="col-12 col-xl-8 col-xxl-7">
+          <div class="col-12">
             <div class="card card-dark">
               <div class="card-header card-header-dark">
                 <div class="d-flex align-items-center justify-content-between">
@@ -80,7 +80,7 @@ $activePage = 'validacion';
                   <button class="btn btn-warning" onclick="registrar('SALIDA')">
                     <i class="bi bi-box-arrow-right me-1"></i>Salida
                   </button>
-                  <button class="btn btn-outline-secondary" onclick="limpiarCampos()">
+                  <button class="btn btn-outline-secondary" onclick="limpiar()">
                     <i class="bi bi-eraser me-1"></i>Limpiar
                   </button>
 
@@ -91,7 +91,43 @@ $activePage = 'validacion';
               </div>
             </div>
           </div>
+                    <!-- CARD: Personal dentro -->
+          <div class="col-12">
+            <div class="card card-dark">
+              <div class="card-header card-header-dark">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="h6 mb-0">Personal dentro</div>
+                      <span class="badge badge-soft" id="cntDentro">0</span>
+                    </div>
+                    <div class="text-muted small">Ultimas 24 Hrs</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
+                  </button>
+                </div>
+              </div>
 
+              <div class="card-body">
+                <div class="row g-2 align-items-end">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Fecha</label>
+                    <div class="form-control form-control-dark d-flex align-items-center" style="pointer-events:none;">
+                      <i class="bi bi-calendar3 me-2"></i>
+                      <span id="d_fecha_text">Hoy</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">RUT (opcional)</label>
+                    <input id="d_rut" class="form-control form-control-dark" placeholder="12345678-5">
+                  </div>
+                </div>
+
+                <div class="mt-3 table-wrap" id="tablaDentro"></div>
+              </div>
+            </div>
+          </div>
           <!-- CARD: Filtros + tabla -->
         </div>
       </section>
@@ -241,7 +277,8 @@ function setModo(modo){
       </div>
     `);
 
-    cargarUltimos();
+    // Refresca “Personal dentro” inmediatamente (ENTRADA agrega, SALIDA quita)
+    if (typeof cargarDentro === 'function') await cargarDentro();
   }
 
   async function cargarUltimos() {
@@ -314,15 +351,79 @@ function setModo(modo){
 
   // Quick search (topbar) -> rellena filtro rut y aplica
   document.addEventListener('DOMContentLoaded', () => {
-    cargarUltimos();
+    const f = document.getElementById('d_fecha');
+    if (f && !f.value) f.value = new Date().toISOString().slice(0,10);
+
+    cargarDentro();
+
     const q = document.getElementById('quickSearch');
     q?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        document.getElementById('f_rut').value = q.value.trim();
-        cargarUltimos();
+        document.getElementById('rut').value = q.value.trim();
+        soloConsultar();
       }
     });
   });
+
+  async function cargarDentro(){
+    document.getElementById('d_fecha_text').textContent = new Date().toISOString().slice(0,10);
+    const fecha = document.getElementById('d_fecha')?.value || new Date().toISOString().slice(0,10);
+    const rut = document.getElementById('d_rut')?.value.trim() || '';
+
+    const params = new URLSearchParams();
+    params.set('fecha', fecha);
+    // el filtro rut lo hacemos client-side (más simple)
+    const res = await fetch('api/personal_dentro.php?' + params.toString(), { cache:'no-store' });
+    const data = await res.json();
+
+    if (!data.ok){
+      document.getElementById('tablaDentro').innerHTML =
+        `<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error cargando')}</div>`;
+      return;
+    }
+
+    let rows = data.items || [];
+    if (rut) rows = rows.filter(x => (x.rut || '').includes(rut));
+
+    const badge = document.getElementById('cntDentro');
+    if (badge) badge.textContent = rows.length;    
+
+    let html = `<div class="table-responsive">
+      <table class="table table-dark table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>RUT</th>
+            <th>Unidad</th>
+            <th>Grado</th>
+            <th>Modo</th>
+            <th>Puesto</th>
+            <th>Último</th>
+          </tr>
+        </thead><tbody>`;
+
+    for (const r of rows){
+      html += `<tr>
+        <td>${escapeHtml(r.nombres || '')}</td>
+        <td class="mono">${escapeHtml(r.rut || '')}</td>
+        <td>${escapeHtml(r.unidad || '')}</td>
+        <td>${escapeHtml(r.grado || '')}</td>
+        <td>${escapeHtml(r.modo || '')}</td>
+        <td>${escapeHtml(r.puesto || '')}</td>
+        <td>${escapeHtml(r.ultima_hora || '')}</td>
+      </tr>`;
+    }
+
+    html += `</tbody></table></div>`;
+    document.getElementById('tablaDentro').innerHTML = html;
+  }
+
+  function limpiarDentro(){
+    document.getElementById('d_fecha').value = new Date().toISOString().slice(0,10);
+    document.getElementById('d_rut').value = '';
+    cargarDentro();
+  }
+
   </script>
     <script src="/Control-Acceso/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/Control-Acceso/assets/js/ui.js"></script>

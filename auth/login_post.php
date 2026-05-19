@@ -36,7 +36,7 @@ try {
 
   auth_login($u);
 
-  header('Location: /Control-Acceso/index.php');
+  header('Location: /Control-Acceso/home.php');
   exit;
 
 } catch (Throwable $e) {

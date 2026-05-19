@@ -4,6 +4,10 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
+require_once __DIR__ . '/../app/auth.php';
+
+require_roles(['ADMIN','GUARDIA']);
+
 
 function input_data(): array {
   $ct = $_SERVER['CONTENT_TYPE'] ?? '';
