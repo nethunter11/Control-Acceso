@@ -10,9 +10,11 @@ $activePage = 'config';
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Configuración | Control Acceso</title>
 
-  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="assets/css/theme.css?v=1" rel="stylesheet">
+  <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
+  
+  <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
+  <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
 </head>
 
 <body>
@@ -31,7 +33,7 @@ $activePage = 'config';
               <div class="card-header card-header-dark">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="h6 mb-0">Gestión de usuarios</div>
+                    <div class="h6 mb-0">GESTIÓN DE USUARIOS</div>
                     <div class="text-muted small">Crear, roles, activar/desactivar, reset password</div>
                   </div>
                   <button class="btn btn-sm btn-outline-light" onclick="loadUsers()">
@@ -88,7 +90,7 @@ $activePage = 'config';
           <div class="col-12 col-xl-4">
             <div class="card card-dark">
               <div class="card-header card-header-dark">
-                <div class="h6 mb-0">Sistema / Diagnóstico</div>
+                <div class="h6 mb-0">SISTEMA / DIAGNÓSTICO</div>
                 <div class="text-muted small">Estado DB, versión, export CSV</div>
               </div>
 
@@ -98,6 +100,7 @@ $activePage = 'config';
                     <div>
                       <div class="small text-muted">Estado de Base de Datos</div>
                       <div class="h6 mb-0" id="dbStatusText">—</div>
+                      <div class="small text-muted" id="dbMeta">—</div>
                     </div>
                     <span id="dbStatusDot" class="status-dot"></span>
                   </div>
@@ -197,6 +200,10 @@ $activePage = 'config';
             <button class="btn btn-sm btn-outline-light" onclick="resetPassPrompt(${u.id}, '${escapeHtml(u.username)}')">
               <i class="bi bi-key me-1"></i>Reset pass
             </button>
+
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')">
+              <i class="bi bi-trash me-1"></i>Eliminar
+            </button> 
           </td>
         </tr>`;
       }
@@ -256,14 +263,31 @@ $activePage = 'config';
 
       const dot = document.getElementById('dbStatusDot');
       const txt = document.getElementById('dbStatusText');
+      const meta = document.getElementById('dbMeta');
 
       if (data.ok){
         txt.textContent = 'Operativa';
         dot.classList.remove('off');
+        if (meta) meta.textContent = `Latencia: ${data.latency_ms} ms · Último check: ${data.checked_at}`;
       } else {
         txt.textContent = 'Inactiva';
         dot.classList.add('off');
+        if (meta) meta.textContent = `${data.error || 'Error'} · Último check: ${data.checked_at || ''}`;
       }
+    }
+
+    async function deleteUser(id, username){
+      const ok = confirm(`¿Seguro que deseas eliminar el usuario "${username}"?\nEsta acción NO se puede deshacer.`);
+      if (!ok) return;
+
+      const data = await postJSON('api/admin_users_delete.php', { id });
+
+      if (!data.ok){
+        alert(data.error || 'Error eliminando usuario');
+        return;
+      }
+
+      await loadUsers();
     }
 
     function exportCsv(){

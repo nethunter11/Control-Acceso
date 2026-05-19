@@ -12,15 +12,13 @@ $activePage = 'validacion';
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Control de Acceso</title>
-
-  <!-- Bootstrap local. -->
-  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Icons -->
-  <link href="assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
+  
+  <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
 
   <!-- Tu theme -->
-  <link href="assets/css/theme.css" rel="stylesheet">
+  <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
+  <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
 </head>
 
 <body>
@@ -261,19 +259,59 @@ function setModo(modo){
     const data = await postJSON('api/registrar_evento.php', { rut, tipo, puesto, modo: modoIngreso });
     if (!data.ok) return setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);
 
-    const ok = data.resultado === 'APROBADO';
-    const alert = ok ? 'alert-success' : 'alert-danger';
-    const motivo = data.motivo ? `<div class="small mt-1">Motivo: <b>${escapeHtml(data.motivo)}</b></div>` : '';
+    const ok = (data.resultado === 'APROBADO');
+    const cls = ok ? 'ok' : 'bad';
+    const icon = ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+    const badgeText = ok ? 'APROBADO' : 'RECHAZADO';
+
+    // Fallbacks (evitan undefined)
+    const rutShow = data.rut || rut;
+    const puestoShow = data.puesto || puesto || 'Portón 1';
+    const modoShow = (data.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
+    const nombreShow = data.funcionario?.nombres || '(sin nombre)';
+    const horaShow = (data.fecha_hora || '').slice(11, 19) || '—';
 
     setResultado(`
-      <div class="alert ${alert} mb-0">
-        <div class="d-flex justify-content-between">
-          <div><b>${escapeHtml(data.tipo)}</b> | Puesto: <b>${escapeHtml(data.puesto)}</b></div>
-          <div><b>${escapeHtml(data.resultado)}</b></div>
+      <div class="event-card ${cls}">
+        <div class="event-head">
+          <div class="event-left">
+            <div class="event-icon"><i class="bi ${icon}"></i></div>
+            <div>
+              <div class="event-title">${escapeHtml(data.tipo)} ${ok ? 'APROBADA' : 'RECHAZADA'}</div>
+              <div class="event-subtitle">${escapeHtml(puestoShow)} · ${escapeHtml(modoShow)} · ${escapeHtml(horaShow)}</div>
+            </div>
+          </div>
+          <div class="event-badge ${cls}">${badgeText}</div>
         </div>
-        <div class="small">RUT: <b>${escapeHtml(data.rut)}</b></div>
-        ${data.funcionario ? `<div class="small">Nombre: <b>${escapeHtml(data.funcionario.nombres)}</b></div>` : ''}
-        ${motivo}
+
+        <div class="event-grid">
+          <div class="event-item">
+            <div class="event-label">RUT</div>
+            <div class="event-value mono">${escapeHtml(rutShow)}</div>
+          </div>
+
+          <div class="event-item">
+            <div class="event-label">Nombre</div>
+            <div class="event-value">${escapeHtml(nombreShow)}</div>
+          </div>
+
+          <div class="event-item">
+            <div class="event-label">Puesto</div>
+            <div class="event-value">${escapeHtml(puestoShow)}</div>
+          </div>
+
+          <div class="event-item">
+            <div class="event-label">Modo</div>
+            <div class="event-value">${escapeHtml(modoShow)}</div>
+          </div>
+        </div>
+
+        ${data.motivo ? `
+          <div class="event-motivo">
+            <span class="k"><i class="bi bi-exclamation-triangle me-1"></i>Motivo:</span>
+            <b>${escapeHtml(data.motivo)}</b>
+          </div>
+        ` : ``}
       </div>
     `);
 
