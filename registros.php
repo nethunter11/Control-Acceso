@@ -38,7 +38,7 @@ $activePage = 'registros';
                 <div class="h6 mb-0">Registros</div>
                 <div class="text-muted small">Búsqueda y filtros</div>
               </div>
-              <button class="btn btn-sm btn-outline-light" onclick="cargarUltimos()">
+              <button id="btnRegRefresh" class="btn btn-sm btn-outline-light" onclick="cargarUltimos()">
                 <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
               </button>
             </div>
@@ -78,7 +78,7 @@ $activePage = 'registros';
             </div>
 
             <div class="d-flex gap-2 flex-wrap mt-2">
-              <button class="btn btn-primary" onclick="cargarUltimos()">
+              <button id="btnRegAplicar" class="btn btn-primary" onclick="cargarUltimos()">
                 <i class="bi bi-funnel me-1"></i>Aplicar
               </button>
               <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">Limpiar</button>
@@ -105,7 +105,28 @@ $activePage = 'registros';
       .replaceAll("'", '&#039;');
   }
 
+  function setButtonLoading(id, loading, label = 'Cargando...') {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    if (loading) {
+      if (!btn.dataset.originalHtml) btn.dataset.originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>${label}`;
+      return;
+    }
+
+    btn.disabled = false;
+    if (btn.dataset.originalHtml) {
+      btn.innerHTML = btn.dataset.originalHtml;
+      delete btn.dataset.originalHtml;
+    }
+  }
+
   async function cargarUltimos() {
+    setButtonLoading('btnRegRefresh', true, 'Cargando...');
+    setButtonLoading('btnRegAplicar', true, 'Cargando...');
+
     const fecha = document.getElementById('f_fecha')?.value || '';
     const rut = document.getElementById('f_rut')?.value.trim() || '';
     const resultado = document.getElementById('f_resultado')?.value || '';
@@ -116,17 +137,17 @@ $activePage = 'registros';
     if (resultado) params.set('resultado', resultado);
     params.set('limit', '50');
 
-    const res = await fetch('api/registros_resumen.php?' + params.toString());
+    try {
+      const res = await fetch('api/registros_resumen.php?' + params.toString());
+      const data = await res.json();
 
-    const data = await res.json();
+      if (!data.ok) {
+        document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando registros.</div>`;
+        return;
+      }
 
-    if (!data.ok) {
-      document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando registros.</div>`;
-      return;
-    }
-
-    const rows = data.items || [];
-    let html = `<div class="table-responsive">
+      const rows = data.items || [];
+      let html = `<div class="table-responsive">
       <table class="table table-dark table-hover align-middle mb-0">
         <thead>
           <tr>
@@ -134,14 +155,14 @@ $activePage = 'registros';
           </tr>
         </thead><tbody>`;
 
-    for (const r of rows) {
-      const modoLabel = (r.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
+      for (const r of rows) {
+        const modoLabel = (r.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
 
-      const badge = (r.resultado === 'APROBADO')
-        ? `<span class="badge text-bg-success">APROBADO</span>`
-        : `<span class="badge text-bg-danger">RECHAZADO</span>`;
+        const badge = (r.resultado === 'APROBADO')
+          ? `<span class="badge text-bg-success">APROBADO</span>`
+          : `<span class="badge text-bg-danger">RECHAZADO</span>`;
 
-      html += `<tr>
+        html += `<tr>
         <td>${escapeHtml(r.rut)}</td>
         <td>${escapeHtml(r.entrada || '')}</td>
         <td>${escapeHtml(r.salida || '')}</td>
@@ -149,12 +170,19 @@ $activePage = 'registros';
         <td>${escapeHtml(r.puesto || '')}</td>
         <td>${badge}</td>
         <td class="text-muted">${escapeHtml(r.motivo || '')}</td>
-      </tr>`;
+        </tr>`;
 
+      }
+
+      html += `</tbody></table></div>`;
+      document.getElementById('tabla').innerHTML = html;
+    } catch (err) {
+      console.error(err);
+      document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando registros.</div>`;
+    } finally {
+      setButtonLoading('btnRegRefresh', false);
+      setButtonLoading('btnRegAplicar', false);
     }
-
-    html += `</tbody></table></div>`;
-    document.getElementById('tabla').innerHTML = html;
   }
 
   function limpiarFiltros() {

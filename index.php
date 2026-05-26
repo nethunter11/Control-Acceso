@@ -16,7 +16,6 @@ $activePage = 'validacion';
   <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
 
-  <!-- Tu theme -->
   <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
   <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
 </head>
@@ -69,13 +68,13 @@ $activePage = 'validacion';
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap mt-3">
-                  <button class="btn btn-outline-light" onclick="soloConsultar()">
+                  <button id="btnConsultar" class="btn btn-outline-light" onclick="soloConsultar()">
                     <i class="bi bi-search me-1"></i>Consultar
                   </button>
-                  <button class="btn btn-success" onclick="registrar('ENTRADA')">
+                  <button id="btnEntrada" class="btn btn-success" onclick="registrar('ENTRADA')">
                     <i class="bi-box-arrow-in-right"></i>Entrada
                   </button>
-                  <button class="btn btn-warning" onclick="registrar('SALIDA')">
+                  <button id="btnSalida" class="btn btn-warning" onclick="registrar('SALIDA')">
                     <i class="bi bi-box-arrow-right me-1"></i>Salida
                   </button>
                   <button class="btn btn-outline-secondary" onclick="limpiar()">
@@ -99,7 +98,7 @@ $activePage = 'validacion';
                       <div class="h6 mb-0">Personal dentro</div>
                       <span class="badge badge-soft" id="cntDentro">0</span>
                     </div>
-                    <div class="text-muted small">Ultimas 24 Hrs</div>
+                    <div class="text-muted small">Últimas 24 Hrs</div>
                   </div>
                   <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()">
                     <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
@@ -150,6 +149,48 @@ $activePage = 'validacion';
   function rutValue() { return document.getElementById('rut').value.trim(); }
   function puestoValue() { return document.getElementById('puesto').value.trim() || 'Portón 1'; }
 
+  let resultadoAutoClearTimer = null;
+
+  function cancelarAutoClearResultado() {
+    if (resultadoAutoClearTimer) {
+      clearTimeout(resultadoAutoClearTimer);
+      resultadoAutoClearTimer = null;
+    }
+  }
+
+  function autoClearResultado(ms = 6000) {
+    cancelarAutoClearResultado();
+    resultadoAutoClearTimer = setTimeout(() => {
+      setResultado('');
+      resultadoAutoClearTimer = null;
+    }, ms);
+  }
+
+  function setButtonsDisabled(ids, disabled) {
+    for (const id of ids) {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = disabled;
+    }
+  }
+
+  function setButtonLoading(id, loading, label = 'Procesando...') {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    if (loading) {
+      if (!btn.dataset.originalHtml) btn.dataset.originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>${label}`;
+      return;
+    }
+
+    btn.disabled = false;
+    if (btn.dataset.originalHtml) {
+      btn.innerHTML = btn.dataset.originalHtml;
+      delete btn.dataset.originalHtml;
+    }
+  }
+
   let modoIngreso = 'PEATONAL';
 
 function setModo(modo){
@@ -168,6 +209,9 @@ function setModo(modo){
 }
 
   async function soloConsultar() {
+    setButtonLoading('btnConsultar', true, 'Consultando...');
+    setButtonsDisabled(['btnEntrada', 'btnSalida'], true);
+
     try {
       const rut = rutValue();
       if (!rut) {
@@ -246,6 +290,9 @@ function setModo(modo){
     } catch (err) {
       console.error(err);
       setResultado(`<div class="alert alert-danger mb-0">Error al consultar (ver consola F12).</div>`);
+    } finally {
+      setButtonLoading('btnConsultar', false);
+      setButtonsDisabled(['btnEntrada', 'btnSalida'], false);
     }
   }
 
@@ -256,67 +303,84 @@ function setModo(modo){
     const puesto = puestoValue();
     if (!rut) return setResultado(`<div class="alert alert-danger mb-0">Ingrese un RUT.</div>`);
 
-    const data = await postJSON('api/registrar_evento.php', { rut, tipo, puesto, modo: modoIngreso });
-    if (!data.ok) return setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);
+    if (tipo === 'SALIDA' && !confirm(`¿Registrar SALIDA para el RUT ${rut}?`)) {
+      return;
+    }
 
-    const ok = (data.resultado === 'APROBADO');
-    const cls = ok ? 'ok' : 'bad';
-    const icon = ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
-    const badgeText = ok ? 'APROBADO' : 'RECHAZADO';
+    const btnId = (tipo === 'ENTRADA') ? 'btnEntrada' : 'btnSalida';
+    setButtonLoading(btnId, true, 'Registrando...');
+    setButtonsDisabled(['btnConsultar', tipo === 'ENTRADA' ? 'btnSalida' : 'btnEntrada'], true);
 
-    // Fallbacks (evitan undefined)
-    const rutShow = data.rut || rut;
-    const puestoShow = data.puesto || puesto || 'Portón 1';
-    const modoShow = (data.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
-    const nombreShow = data.funcionario?.nombres || '(sin nombre)';
-    const horaShow = (data.fecha_hora || '').slice(11, 19) || '—';
+    try {
+      const data = await postJSON('api/registrar_evento.php', { rut, tipo, puesto, modo: modoIngreso });
+      if (!data.ok) return setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);
 
-    setResultado(`
-      <div class="event-card ${cls}">
-        <div class="event-head">
-          <div class="event-left">
-            <div class="event-icon"><i class="bi ${icon}"></i></div>
-            <div>
-              <div class="event-title">${escapeHtml(data.tipo)} ${ok ? 'APROBADA' : 'RECHAZADA'}</div>
-              <div class="event-subtitle">${escapeHtml(puestoShow)} · ${escapeHtml(modoShow)} · ${escapeHtml(horaShow)}</div>
+      const ok = (data.resultado === 'APROBADO');
+      const cls = ok ? 'ok' : 'bad';
+      const icon = ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+      const badgeText = ok ? 'APROBADO' : 'RECHAZADO';
+
+      // Fallbacks (evitan undefined)
+      const rutShow = data.rut || rut;
+      const puestoShow = data.puesto || puesto || 'Portón 1';
+      const modoShow = (data.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
+      const nombreShow = data.funcionario?.nombres || '(sin nombre)';
+      const horaShow = (data.fecha_hora || '').slice(11, 19) || '—';
+
+      setResultado(`
+        <div class="event-card ${cls}">
+          <div class="event-head">
+            <div class="event-left">
+              <div class="event-icon"><i class="bi ${icon}"></i></div>
+              <div>
+                <div class="event-title">${escapeHtml(data.tipo)} ${ok ? 'APROBADA' : 'RECHAZADA'}</div>
+                <div class="event-subtitle">${escapeHtml(puestoShow)} · ${escapeHtml(modoShow)} · ${escapeHtml(horaShow)}</div>
+              </div>
+            </div>
+            <div class="event-badge ${cls}">${badgeText}</div>
+          </div>
+
+          <div class="event-grid">
+            <div class="event-item">
+              <div class="event-label">RUT</div>
+              <div class="event-value mono">${escapeHtml(rutShow)}</div>
+            </div>
+
+            <div class="event-item">
+              <div class="event-label">Nombre</div>
+              <div class="event-value">${escapeHtml(nombreShow)}</div>
+            </div>
+
+            <div class="event-item">
+              <div class="event-label">Puesto</div>
+              <div class="event-value">${escapeHtml(puestoShow)}</div>
+            </div>
+
+            <div class="event-item">
+              <div class="event-label">Modo</div>
+              <div class="event-value">${escapeHtml(modoShow)}</div>
             </div>
           </div>
-          <div class="event-badge ${cls}">${badgeText}</div>
+
+          ${data.motivo ? `
+            <div class="event-motivo">
+              <span class="k"><i class="bi bi-exclamation-triangle me-1"></i>Motivo:</span>
+              <b>${escapeHtml(data.motivo)}</b>
+            </div>
+          ` : ``}
         </div>
+      `);
 
-        <div class="event-grid">
-          <div class="event-item">
-            <div class="event-label">RUT</div>
-            <div class="event-value mono">${escapeHtml(rutShow)}</div>
-          </div>
-
-          <div class="event-item">
-            <div class="event-label">Nombre</div>
-            <div class="event-value">${escapeHtml(nombreShow)}</div>
-          </div>
-
-          <div class="event-item">
-            <div class="event-label">Puesto</div>
-            <div class="event-value">${escapeHtml(puestoShow)}</div>
-          </div>
-
-          <div class="event-item">
-            <div class="event-label">Modo</div>
-            <div class="event-value">${escapeHtml(modoShow)}</div>
-          </div>
-        </div>
-
-        ${data.motivo ? `
-          <div class="event-motivo">
-            <span class="k"><i class="bi bi-exclamation-triangle me-1"></i>Motivo:</span>
-            <b>${escapeHtml(data.motivo)}</b>
-          </div>
-        ` : ``}
-      </div>
-    `);
-
-    // Refresca “Personal dentro” inmediatamente (ENTRADA agrega, SALIDA quita)
-    if (typeof cargarDentro === 'function') await cargarDentro();
+      // Refresca "Personal dentro" inmediatamente (ENTRADA agrega, SALIDA quita)
+      if (typeof cargarDentro === 'function') await cargarDentro();
+      autoClearResultado();
+    } catch (err) {
+      console.error(err);
+      setResultado(`<div class="alert alert-danger mb-0">Error al registrar (ver consola F12).</div>`);
+    } finally {
+      setButtonLoading(btnId, false);
+      setButtonsDisabled(['btnConsultar', tipo === 'ENTRADA' ? 'btnSalida' : 'btnEntrada'], false);
+    }
   }
 
   async function cargarUltimos() {
@@ -369,7 +433,11 @@ function setModo(modo){
     document.getElementById('tabla').innerHTML = html;
   }
 
-  function limpiar() { document.getElementById('rut').value = ''; setResultado(''); }
+  function limpiar() {
+    cancelarAutoClearResultado();
+    document.getElementById('rut').value = '';
+    setResultado('');
+  }
   function limpiarFiltros() {
     document.getElementById('f_desde').value = '';
     document.getElementById('f_hasta').value = '';
@@ -389,11 +457,20 @@ function setModo(modo){
 
   // Quick search (topbar) -> rellena filtro rut y aplica
   document.addEventListener('DOMContentLoaded', () => {
+
     const f = document.getElementById('d_fecha');
     if (f && !f.value) f.value = new Date().toISOString().slice(0,10);
-
     cargarDentro();
 
+    // Enter en el input RUT -> registrar ENTRADA
+    const rutInput = document.getElementById('rut');
+    rutInput?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await registrar('ENTRADA');
+      }
+    });
+    
     const q = document.getElementById('quickSearch');
     q?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

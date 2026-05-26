@@ -37,8 +37,8 @@ try {
     // registra rechazado
     $motivo = 'RUT inválido (DV o formato)';
     $st = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, resultado, motivo)
-                         VALUES (?, ?, NOW(), ?, 'RECHAZADO', ?)");
-    $st->execute([$rut, $tipo, $puesto, $motivo]);
+                         VALUES (?, ?, ?, NOW(), ?, 'RECHAZADO', ?)");
+    $st->execute([$rut, $tipo, $modo, $puesto, $motivo]);
 
     echo json_encode([
       'ok' => true,
@@ -97,14 +97,15 @@ try {
           'modo'      => $modo,
           'puesto'    => $puesto,
 
-          // (Opcional pero recomendado) Datos del funcionario para que no salga undefined en nombre/unidad/grado
+          // Datos del funcionario para que la UI reciba la misma estructura que en el registro normal.
           'funcionario' => [
-            'nombre' => $func['nombre'] ?? null,
-            'unidad' => $func['unidad'] ?? null,
-            'grado'  => $func['grado']  ?? null,
-            'activo' => $func['activo'] ?? null
+            'rut' => $f['rut'],
+            'nombres' => $f['nombres'],
+            'unidad' => $f['unidad'],
+            'grado' => $f['grado'],
+            'estado' => $f['estado'],
           ],
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit;
 
       }

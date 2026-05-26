@@ -77,7 +77,7 @@ $activePage = 'visitas';
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap mt-3">
-                  <button class="btn btn-success" onclick="registrarEntrada()">
+                  <button id="btnVisitaEntrada" class="btn btn-success" onclick="registrarEntrada()">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Registrar entrada
                   </button>
                   <button class="btn btn-outline-secondary" onclick="limpiarForm()">
@@ -99,7 +99,7 @@ $activePage = 'visitas';
                     <div class="h6 mb-0">LISTADO DE VISITAS</div>
                     <div class="text-muted small">Filtrar por fecha/RUT/estado</div>
                   </div>
-                  <button class="btn btn-sm btn-outline-light" onclick="cargarVisitas()">
+                  <button id="btnVisitasRefresh" class="btn btn-sm btn-outline-light" onclick="cargarVisitas()">
                     <i class="bi bi-arrow-clockwise me-1"></i> Refrescar
                   </button>
                 </div>
@@ -176,6 +176,24 @@ $activePage = 'visitas';
       document.getElementById('v_resultado').innerHTML = html;
     }
 
+    function setButtonLoading(id, loading, label = 'Procesando...') {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+
+      if (loading) {
+        if (!btn.dataset.originalHtml) btn.dataset.originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>${label}`;
+        return;
+      }
+
+      btn.disabled = false;
+      if (btn.dataset.originalHtml) {
+        btn.innerHTML = btn.dataset.originalHtml;
+        delete btn.dataset.originalHtml;
+      }
+    }
+
     async function registrarEntrada(){
       const nombre = document.getElementById('v_nombre').value.trim();
       const rut = document.getElementById('v_rut').value.trim();
@@ -184,39 +202,65 @@ $activePage = 'visitas';
       const puesto = document.getElementById('v_puesto').value.trim() || 'Portón 1';
       const motivo = document.getElementById('v_motivo').value.trim();
 
-      const data = await postJSON('api/visitas_entrada.php', { nombre, rut, telefono, modo: modoVisita, patente, puesto, motivo });
+      setButtonLoading('btnVisitaEntrada', true, 'Registrando...');
 
-      if (!data.ok) {
-        setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);
-        return;
+      try {
+        const data = await postJSON('api/visitas_entrada.php', { nombre, rut, telefono, modo: modoVisita, patente, puesto, motivo });
+
+        if (!data.ok) {
+          setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);
+          return;
+        }
+
+        const ok = (data.resultado || '') === 'APROBADO';
+        if (!ok) {
+          setResultado(`<div class="alert alert-warning mb-0"><b>RECHAZADO</b><div class="small">${escapeHtml(data.motivo || '')}</div></div>`);
+          return;
+        }
+
+        setResultado(`<div class="alert alert-success mb-0"><b>APROBADO</b> - Entrada registrada</div>`);
+        limpiarForm(false);
+        await cargarVisitas();
+      } catch (err) {
+        console.error(err);
+        setResultado(`<div class="alert alert-danger mb-0">Error registrando visita (ver consola F12).</div>`);
+      } finally {
+        setButtonLoading('btnVisitaEntrada', false);
       }
-
-      const ok = (data.resultado || '') === 'APROBADO';
-      if (!ok) {
-        setResultado(`<div class="alert alert-warning mb-0"><b>RECHAZADO</b><div class="small">${escapeHtml(data.motivo || '')}</div></div>`);
-        return;
-      }
-
-      setResultado(`<div class="alert alert-success mb-0"><b>APROBADO</b> - Entrada registrada</div>`);
-      limpiarForm(false);
-      await cargarVisitas();
     }
 
-    async function marcarSalida(id){
-      const data = await postJSON('api/visitas_salida.php', { id });
+    async function marcarSalida(id, nombre = '', rut = ''){
+      const detalle = [nombre, rut].filter(Boolean).join(' - ');
+      if (!confirm(`¿Registrar salida de esta visita${detalle ? ` (${detalle})` : ''}?`)) {
+        return;
+      }
 
-      if (!data.ok) {
-        alert(data.error || 'Error');
-        return;
+      const btnId = `btnSalidaVisita_${id}`;
+      setButtonLoading(btnId, true, 'Guardando...');
+
+      try {
+        const data = await postJSON('api/visitas_salida.php', { id });
+
+        if (!data.ok) {
+          alert(data.error || 'Error');
+          return;
+        }
+        if ((data.resultado||'') !== 'APROBADO') {
+          alert(data.motivo || 'RECHAZADO');
+          return;
+        }
+        await cargarVisitas();
+      } catch (err) {
+        console.error(err);
+        alert('Error registrando salida de visita.');
+      } finally {
+        setButtonLoading(btnId, false);
       }
-      if ((data.resultado||'') !== 'APROBADO') {
-        alert(data.motivo || 'RECHAZADO');
-        return;
-      }
-      await cargarVisitas();
     }
 
     async function cargarVisitas(){
+      setButtonLoading('btnVisitasRefresh', true, 'Cargando...');
+
       const fecha = document.getElementById('f_fecha').value;
       const rut = document.getElementById('f_rut').value.trim();
       const estado = document.getElementById('f_estado').value;
@@ -227,16 +271,17 @@ $activePage = 'visitas';
       if (estado) params.set('estado', estado);
       params.set('limit','80');
 
-      const res = await fetch('api/visitas_listar.php?' + params.toString());
-      const data = await res.json();
+      try {
+        const res = await fetch('api/visitas_listar.php?' + params.toString());
+        const data = await res.json();
 
-      if (!data.ok) {
-        document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando visitas</div>`;
-        return;
-      }
+        if (!data.ok) {
+          document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando visitas</div>`;
+          return;
+        }
 
-      const rows = data.items || [];
-      let html = `<div class="table-responsive">
+        const rows = data.items || [];
+        let html = `<div class="table-responsive">
         <table class="table table-dark table-hover align-middle mb-0">
           <thead>
             <tr>
@@ -252,16 +297,16 @@ $activePage = 'visitas';
             </tr>
           </thead><tbody>`;
 
-      for (const r of rows){
-        const badge = (r.estado === 'DENTRO')
-          ? `<span class="badge text-bg-warning">DENTRO</span>`
-          : `<span class="badge text-bg-secondary">SALIO</span>`;
+        for (const r of rows){
+          const badge = (r.estado === 'DENTRO')
+            ? `<span class="badge text-bg-warning">DENTRO</span>`
+            : `<span class="badge text-bg-secondary">SALIO</span>`;
 
-        const btn = (r.estado === 'DENTRO')
-          ? `<button class="btn btn-sm btn-success" onclick="marcarSalida(${r.id})"><i class="bi bi-box-arrow-right"></i></button>`
-          : ``;
+          const btn = (r.estado === 'DENTRO')
+            ? `<button id="btnSalidaVisita_${r.id}" class="btn btn-sm btn-success" onclick="marcarSalida(${r.id})"><i class="bi bi-box-arrow-right"></i></button>`
+            : ``;
 
-        html += `<tr>
+          html += `<tr>
           <td>${escapeHtml(r.nombre)}</td>
           <td class="mono">${escapeHtml(r.rut)}</td>
           <td>${escapeHtml(r.fecha_hora_entrada)}</td>
@@ -271,11 +316,17 @@ $activePage = 'visitas';
           <td>${escapeHtml(r.puesto || '')}</td>
           <td>${badge}</td>
           <td>${btn}</td>
-        </tr>`;
-      }
+          </tr>`;
+        }
 
-      html += `</tbody></table></div>`;
-      document.getElementById('tabla').innerHTML = html;
+        html += `</tbody></table></div>`;
+        document.getElementById('tabla').innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        document.getElementById('tabla').innerHTML = `<div class="alert alert-danger mb-0">Error cargando visitas</div>`;
+      } finally {
+        setButtonLoading('btnVisitasRefresh', false);
+      }
     }
 
     function limpiarForm(cargar=true){
