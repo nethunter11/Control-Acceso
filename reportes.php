@@ -127,7 +127,7 @@ $activePage = 'reportes';
             <div class="card card-dark w-100 h-100">
               <div class="card-header card-header-dark">
                 <div class="h6 mb-0">Horas pico</div>
-                <div class="text-muted small">Entradas aprobadas por hora (día seleccionado)</div>
+                <div class="text-muted small">Entradas y salidas aprobadas por hora (día seleccionado)</div>
               </div>
               <div class="card-body">
                 <canvas id="chartHoras" height="120"></canvas>
@@ -274,21 +274,43 @@ $activePage = 'reportes';
 
     function renderHoras(items){
       // Normaliza 0..23
-      const arr = Array.from({length:24}, (_,h)=>({hora:h,total:0}));
+      const arr = Array.from({length:24}, (_,h)=>({hora:h,entradas:0,salidas:0}));
       for (const r of items){
         const h = Number(r.hora);
-        if (h>=0 && h<=23) arr[h].total = Number(r.total || 0);
+        if (h>=0 && h<=23) {
+          arr[h].entradas = Number(r.entradas ?? r.total ?? 0);
+          arr[h].salidas = Number(r.salidas || 0);
+        }
       }
 
       const labels = arr.map(x => String(x.hora).padStart(2,'0') + ':00');
-      const data = arr.map(x => x.total);
+      const entradas = arr.map(x => x.entradas);
+      const salidas = arr.map(x => x.salidas);
 
       const ctx = document.getElementById('chartHoras');
       if (chartHoras) chartHoras.destroy();
 
       chartHoras = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'Entradas aprobadas', data }] },
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Entradas aprobadas',
+              data: entradas,
+              backgroundColor: 'rgba(54, 162, 235, 0.55)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Salidas aprobadas',
+              data: salidas,
+              backgroundColor: 'rgba(248, 113, 113, 0.55)',
+              borderColor: 'rgba(248, 113, 113, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
         options: {
         maintainAspectRatio: false,
           spanGaps: false,

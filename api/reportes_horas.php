@@ -15,9 +15,12 @@ try {
   $dt2 = $fecha . " 23:59:59";
 
   $st = $pdo->prepare("
-    SELECT HOUR(fecha_hora) AS hora, COUNT(*) AS total
+    SELECT
+      HOUR(fecha_hora) AS hora,
+      SUM(tipo='ENTRADA') AS entradas,
+      SUM(tipo='SALIDA') AS salidas
     FROM registros_acceso
-    WHERE tipo='ENTRADA'
+    WHERE tipo IN ('ENTRADA','SALIDA')
       AND fecha_hora >= ? AND fecha_hora <= ?
       AND resultado='APROBADO'
     GROUP BY HOUR(fecha_hora)

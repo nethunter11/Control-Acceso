@@ -2,7 +2,7 @@
 <?php
 require_once __DIR__ . '/app/auth.php';
 require_login();
-require_roles(['ADMIN','GUARDIA']);   // ✅ Solo ADMIN y GUARDIA
+require_roles(['ADMIN','GUARDIA']);   
 $activePage = 'validacion';
 ?>
 

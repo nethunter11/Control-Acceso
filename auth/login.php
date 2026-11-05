@@ -46,12 +46,6 @@ $err = $_GET['err'] ?? '';
         <div class="login-title h4 text-white">Sign in</div>
         <div class="login-sub text-white-50">Ingresa tus credenciales</div>
 
-        <?php if ($err): ?>
-          <div class="alert alert-danger">
-            <?= htmlspecialchars($err) ?>
-          </div>
-        <?php endif; ?>
-
         <form method="post" action="/Control-Acceso/auth/login_post.php" autocomplete="off">
           <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>">
 
@@ -73,6 +67,33 @@ $err = $_GET['err'] ?? '';
     </div>
   </div>
 
+  <?php if ($err): ?>
+    <div class="modal fade" id="loginErrorModal" tabindex="-1" aria-labelledby="loginErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border border-danger-subtle">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title" id="loginErrorModalLabel"><?= htmlspecialchars($err) ?></h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body text-white-50">
+            Verifica tus credenciales e intenta de nuevo.
+          </div>
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <script src="/Control-Acceso/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <?php if ($err): ?>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const modalEl = document.getElementById('loginErrorModal');
+        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      });
+    </script>
+  <?php endif; ?>
 </body>
 </html>

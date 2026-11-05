@@ -16,7 +16,7 @@ switch ($rol) {
     header('Location: /Control-Acceso/registros.php');
     exit;
   default:
-    // si algo raro pasa, manda a login
+    
     header('Location: /Control-Acceso/auth/login.php');
     exit;
 }
