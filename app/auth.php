@@ -1,8 +1,19 @@
 <?php
 // app/auth.php
+require_once __DIR__ . '/config.php';
 
 function auth_start_session(): void {
   if (session_status() === PHP_SESSION_NONE) {
+    $session = app_config()['session'];
+    if (!empty($session['name'])) {
+      session_name($session['name']);
+    }
+    if (!empty($session['save_path'])) {
+      session_save_path($session['save_path']);
+    }
+    if (!empty($session['cookie_path'])) {
+      session_set_cookie_params(['path' => $session['cookie_path']]);
+    }
     session_start();
   }
 }
@@ -49,7 +60,7 @@ function require_role(string $rol): void {
 }
 
 function csrf_token(): string {
-  if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+  auth_start_session();
   if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
   }
@@ -57,7 +68,7 @@ function csrf_token(): string {
 }
 
 function csrf_validate(?string $token): bool {
-  if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+  auth_start_session();
   return is_string($token)
     && isset($_SESSION['csrf_token'])
     && hash_equals($_SESSION['csrf_token'], $token);
