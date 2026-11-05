@@ -1,0 +1,24 @@
+# Configuracion privada de cada entorno
+.env
+.env.*
+!.env.example
+/app/config.local.php
+/app/db.local.php
+
+# Respaldos y datos reales: conservar fuera del repositorio
+*.sql
+*.sql.gz
+*.zip
+*.bak
+/backups/
+/respaldos/
+/dumps/
+!database/schema.sql
+!database/migrations/*.sql
+
+# Archivos temporales y ajustes del equipo
+*.log
+/tmp/
+/.vscode/
+.DS_Store
+Thumbs.db
