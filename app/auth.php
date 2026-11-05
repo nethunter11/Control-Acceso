@@ -89,3 +89,23 @@ function require_roles(array $allowed) {
     exit;
   }
 }
+
+function require_api_roles(array $allowed): void {
+  header('Cache-Control: no-store');
+  $user = auth_user();
+  $allowed = array_map('strtoupper', $allowed);
+
+  if ($user !== null && in_array(auth_role(), $allowed, true)) {
+    return;
+  }
+
+  http_response_code($user === null ? 401 : 403);
+  header('Content-Type: application/json; charset=utf-8');
+  echo json_encode([
+    'ok' => false,
+    'error' => $user === null
+      ? 'Debes iniciar sesión.'
+      : 'No tienes permisos para realizar esta operación.',
+  ], JSON_UNESCAPED_UNICODE);
+  exit;
+}

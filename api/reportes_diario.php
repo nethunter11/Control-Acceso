@@ -1,5 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../app/auth.php';
+require_api_roles(['ADMIN','AUDITOR']);
 require_once __DIR__ . '/../app/db.php';
 
 try {
