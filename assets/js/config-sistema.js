@@ -50,7 +50,6 @@
       else if(metrics[key]>=75)items.push(notice(label+': uso elevado',percent(metrics[key])+' utilizado.','warning'));
     }
     if(!database.ok)items.push(notice('Base de datos sin conexión','No se pudo completar la consulta de diagnóstico.','danger'));
-    items.push(notice('Temperatura de demostración','La tarjeta muestra 45 °C como referencia fija; no es una medición del equipo.'));
     if(!items.length)items.push(notice('Lecturas disponibles','No hay avisos de uso elevado en esta lectura.'));
     list.replaceChildren(...items);
   }

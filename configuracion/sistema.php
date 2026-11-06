@@ -25,8 +25,8 @@ include __DIR__.'/../partials/config-header.php';
     <article class="system-metric system-metric-amber" id="temperatureCard">
       <div class="system-metric-top"><span>Temperatura</span><i class="bi bi-thermometer-half" aria-hidden="true"></i></div>
       <div class="system-value" id="temperatureValue">45 °C</div>
-      <div class="system-temperature-source" id="temperatureSource">Temperatura de referencia</div>
-      <div class="system-metric-detail" id="temperatureDetail">Valor fijo de demostración</div>
+      <div class="system-meter" id="temperatureMeter" role="meter" aria-label="Temperatura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" aria-valuetext="45 °C"><span style="width:45%"></span></div>
+      <div class="system-metric-detail" id="temperatureDetail">Temperatura del sistema</div>
     </article>
     <article class="system-metric system-metric-pink" id="diskCard">
       <div class="system-metric-top"><span>Almacenamiento</span><i class="bi bi-hdd" aria-hidden="true"></i></div>

@@ -176,9 +176,9 @@ expresan en GiB (1 GiB = 1 073 741 824 bytes).
 En Windows, PHP ejecuta un colector PowerShell de solo lectura con consultas CIM.
 No instala servicios, controladores ni cambia políticas de ejecución. La lectura
 de CPU usa dos muestras de los contadores de Windows; RAM procede de
-`Win32_OperatingSystem`. La tarjeta de temperatura muestra **45 °C** como
-**Temperatura de referencia**, con la indicación **Valor fijo de demostración**.
-Este ejemplo visual no se guarda como una medición del equipo.
+`Win32_OperatingSystem`. La tarjeta de temperatura muestra un valor fijo de
+**45 °C**, una barra ámbar con escala de 0 a 100 °C y el texto **Temperatura del
+sistema**. Es una referencia visual; no se guarda como una medición del equipo.
 
 El colector y la columna **Temperatura real** del historial conservan exclusivamente
 la lectura de una zona térmica ACPI compatible cuando Windows la proporciona;
