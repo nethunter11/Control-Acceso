@@ -129,10 +129,14 @@ datos temporales se retiran al terminar.
 
 ## Configuración y exportaciones
 
-Configuración organiza sus opciones en tres secciones desplegables: **Gestión de
-usuarios**, **Sistema / diagnóstico** y **Exportaciones**. La comprobación de la
-base de datos se actualiza al abrir diagnóstico y también puede repetirse con
-**Probar conexión**.
+El botón **Configuración** del menú izquierdo despliega tres enlaces: **Gestión**,
+**Sistema** y **Exportaciones**. Cada uno abre una pantalla independiente. Los tres
+requieren una sesión de administrador; la dirección anterior
+`configuraciones.php` redirige a Gestión.
+
+- `configuracion/gestion.php`: cuentas, roles y permisos de usuarios.
+- `configuracion/sistema.php`: monitor de recursos y conexión a MariaDB.
+- `configuracion/exportaciones.php`: descarga de listados CSV.
 
 Para descargar registros, abre **Exportaciones**, elige **Registros de acceso** o
 **Registros de visitas**, selecciona **Un día** y la fecha, y pulsa **Descargar CSV**.
@@ -160,6 +164,48 @@ texto en Excel; si procesas el archivo con otro programa, considera ese prefijo.
 límites de medianoche, visitas entre días, permisos y contenido de los CSV. Requiere
 el servidor de pruebas y un respaldo SQL con restauración comprobada. Retira sus
 datos temporales y verifica el contenido de las cuatro tablas al terminar.
+
+## Monitor de Sistema
+
+Sistema muestra lecturas reales del equipo que ejecuta XAMPP: uso total de CPU,
+memoria física utilizada y disponible, ocupación del volumen del proyecto, tiempo
+encendido, estado de MariaDB y latencia de conexión. No representa exclusivamente
+los recursos utilizados por esta aplicación. Las cantidades de memoria y disco se
+expresan en GiB (1 GiB = 1 073 741 824 bytes).
+
+En Windows, PHP ejecuta un colector PowerShell de solo lectura con consultas CIM.
+No instala servicios, controladores ni cambia políticas de ejecución. La lectura
+de CPU usa dos muestras de los contadores de Windows; RAM procede de
+`Win32_OperatingSystem`. La temperatura solo se muestra si Windows proporciona una
+zona térmica ACPI compatible; esa lectura **no identifica la temperatura interna
+de CPU**. Si no hay sensor o falla una lectura, aparece **No disponible**, sin
+reemplazar el dato por cero.
+
+El panel consulta aproximadamente cada 10 segundos, permite pausar y actualizar
+manualmente, y suspende las consultas al ocultar la pestaña. Varias pestañas
+comparten una caché para evitar ejecutar colectores simultáneos. Los procesos de
+lectura tienen un tiempo máximo de 8 segundos y los errores no publican rutas ni
+credenciales.
+
+El gráfico permite consultar los últimos 15 minutos, una hora o seis horas. Guarda
+solo las lecturas obtenidas mientras Sistema está activo; los intervalos sin
+lecturas aparecen como huecos. El historial tiene un máximo de 2 161 muestras,
+se conserva hasta seis horas en una carpeta temporal privada de Windows y puede
+desaparecer si el sistema limpia sus temporales. Cada carpeta del proyecto tiene
+su propio historial; no se guarda en MariaDB ni en el directorio público.
+
+Los avisos de uso elevado empiezan en 75 % y de uso alto en 90 % para CPU, RAM y
+disco. La temperatura informa la lectura del sensor disponible sin asignar un
+diagnóstico térmico al equipo.
+
+`C:\xampp\php\php.exe tests\sistema.php` verifica la normalización de métricas,
+lecturas ausentes, bloqueo, caché, recuperación del historial y permisos por HTTP.
+Requiere el servidor de pruebas iniciado y las cuatro cuentas de rol activas.
+Retira sus archivos y sesiones temporales sin modificar registros de MariaDB.
+
+Referencias del colector: [contadores de rendimiento de Windows](https://learn.microsoft.com/en-us/windows/win32/wmisdk/monitoring-performance-data),
+[memoria y tiempo de arranque](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-operatingsystem)
+y [zonas térmicas ACPI](https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/design-guide).
 
 ## Diseño y lectura en pórticos
 

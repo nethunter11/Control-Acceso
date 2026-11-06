@@ -62,6 +62,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .sidebar .nav { padding: 0 12px; gap: 5px; }
 .sidebar .nav-link { position: relative; display: flex; align-items: center; gap: 13px; min-height: 48px; padding: 12px 14px; color: var(--muted); border: 1px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 500; white-space: nowrap; }
 .sidebar .nav-link > i { font-size: 19px; width: 22px; flex-shrink: 0; text-align: center; }
+.config-toggle { width: 100%; text-align: left; background: transparent; }
+.sidebar .nav-link > .config-caret { width: auto; margin-left: auto; font-size: 11px; transition: transform .18s ease; }
+.config-toggle[aria-expanded="true"] .config-caret { transform: rotate(180deg); }
+.config-submenu { margin: 6px 0 9px 25px; padding-left: 17px; border-left: 1px solid var(--border2); }
+.subnav-link { display: flex; align-items: center; gap: 10px; min-height: 42px; margin: 3px 0; padding: 10px 12px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 6px; }
+.subnav-link i { font-size: 15px; }
+.subnav-link:hover { color: var(--text); background: var(--panel3); }
+.subnav-link.active { color: var(--accent); background: var(--accent-soft); font-weight: 650; }
+.sidebar.collapsed .config-caret { display: none; }
 .sidebar .nav-link:hover { color: var(--text); background: var(--panel3); }
 .sidebar .nav-link.active { background: var(--accent-soft); color: var(--accent); border-color: var(--border); font-weight: 650; }
 .sidebar .nav-link.active::before { content: ""; position: absolute; left: -13px; top: 13px; bottom: 13px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }

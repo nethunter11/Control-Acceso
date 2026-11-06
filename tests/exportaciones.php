@@ -194,15 +194,23 @@ try {
   }
   echo "OK: fechas y criterios inválidos rechazados; exportaciones restringidas a ADMIN\n";
 
-  $settings = export_request($fixtures['ADMIN'],'configuraciones.php');
-  $dom = new DOMDocument();
-  $dom->loadHTML('<?xml encoding="UTF-8">'.$settings['body'],LIBXML_NONET|LIBXML_NOERROR|LIBXML_NOWARNING);
-  $xpath = new DOMXPath($dom);
-  export_assert($settings['status']===200 && $xpath->query('//*[@id="settingsAccordion"]/*[contains(@class,"accordion-item")]')->length===3,'Configuración no tiene tres secciones desplegables.');
-  foreach (['settingsUsers','settingsSystem','settingsExports','usersTable','nu_username','nu_password','nu_rol','nu_activo','csvTable','csvDate','csvPeriod','csvCriterion'] as $id) {
-    export_assert($xpath->query('//*[@id="'.$id.'"]')->length===1,'Falta un control o hay identificadores duplicados: '.$id);
+  foreach ([
+    'gestion'=>['usersTable','nu_username','nu_password','nu_rol','nu_activo'],
+    'sistema'=>['systemChart','cpuValue','ramValue','temperatureValue','systemRecent'],
+    'exportaciones'=>['csvTable','csvDate','csvPeriod','csvCriterion','csvForm']
+  ] as $section=>$ids) {
+    $settings = export_request($fixtures['ADMIN'],'configuracion/'.$section.'.php');
+    $dom = new DOMDocument();
+    $dom->loadHTML('<?xml encoding="UTF-8">'.$settings['body'],LIBXML_NONET|LIBXML_NOERROR|LIBXML_NOWARNING);
+    $xpath = new DOMXPath($dom);
+    export_assert($settings['status']===200 && $xpath->query('//*[@id="settingsAccordion"]')->length===0,'La sección no es una pantalla independiente: '.$section);
+    export_assert($xpath->query('//*[@id="configSubmenu"]/a')->length===3,'Faltan opciones del submenú de Configuración.');
+    export_assert($xpath->query('//*[@id="configSubmenu"]/a[@aria-current="page"]')->length===1,'No se identifica la sección seleccionada.');
+    foreach($ids as $id)export_assert($xpath->query('//*[@id="'.$id.'"]')->length===1,'Falta un control de '.$section.': '.$id);
   }
-  echo "OK: Configuración conserva los controles de usuarios y separa diagnóstico y exportaciones\n";
+  $legacy=export_request($fixtures['ADMIN'],'configuraciones.php');
+  export_assert($legacy['status']===302 && str_ends_with($legacy['headers']['location'] ?? '', '/configuracion/gestion.php'),'La ruta anterior no dirige a Gestión.');
+  echo "OK: Gestión, Sistema y Exportaciones son pantallas independientes con submenú y controles conservados\n";
 } catch (Throwable $error) {
   fwrite(STDERR,$error->getMessage()."\n");
   $failed = true;

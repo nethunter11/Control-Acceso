@@ -46,6 +46,9 @@
       const mobile = window.matchMedia('(max-width: 991px)');
       let collapsed = readPreference(menuKey) === 'collapsed';
       let open = false;
+      const configButton = document.getElementById('configToggle');
+      const configSubmenu = document.getElementById('configSubmenu');
+      let configOpen = configSubmenu ? !configSubmenu.hidden : false;
       function syncMenu() {
         sidebar.classList.toggle('collapsed', !mobile.matches && collapsed);
         document.body.classList.toggle('nav-open', mobile.matches && open);
@@ -56,6 +59,11 @@
         const label = mobile.matches ? (open ? 'Cerrar menú' : 'Abrir menú') : (collapsed ? 'Expandir menú' : 'Contraer menú');
         toggle.setAttribute('aria-label', label);
         toggle.title = label;
+        if (configSubmenu && configButton) {
+          const showConfig = configOpen && (mobile.matches || !collapsed);
+          configSubmenu.hidden = !showConfig;
+          configButton.setAttribute('aria-expanded', String(showConfig));
+        }
       }
       function closeMenu(restoreFocus = true) {
         open = false;
@@ -75,12 +83,22 @@
       });
       backdrop.addEventListener('click', () => closeMenu());
       document.getElementById('sidebarClose')?.addEventListener('click', () => closeMenu());
-      sidebar.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', () => { if (mobile.matches) closeMenu(false); }));
+      configButton?.addEventListener('click', () => {
+        if (!mobile.matches && collapsed) {
+          collapsed = false;
+          configOpen = true;
+          savePreference(menuKey, 'expanded');
+        } else {
+          configOpen = !configOpen;
+        }
+        syncMenu();
+      });
+      sidebar.querySelectorAll('a.nav-link, .subnav-link').forEach(link => link.addEventListener('click', () => { if (mobile.matches) closeMenu(false); }));
       document.addEventListener('keydown', event => {
         if (!mobile.matches || !open) return;
         if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
         if (event.key === 'Tab') {
-          const targets = [...sidebar.querySelectorAll('a[href], button:not([disabled])')];
+          const targets = [...sidebar.querySelectorAll('a[href], button:not([disabled])')].filter(element => !element.closest('[hidden]'));
           const first = targets[0], last = targets[targets.length - 1];
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }

@@ -6,8 +6,8 @@ $navigation = [
   ['visitas', 'visitas.php', 'people', 'Visitas', ['ADMIN','CONTROL_VISITA']],
   ['registros', 'registros.php', 'journal-text', 'Registros', ['ADMIN','GUARDIA','AUDITOR']],
   ['reportes', 'reportes.php', 'bar-chart-line', 'Reportes', ['ADMIN','AUDITOR']],
-  ['config', 'configuraciones.php', 'gear', 'Configuración', ['ADMIN']],
 ];
+$isConfig = str_starts_with($activePage, 'config');
 ?>
 <a class="skip-link" href="#mainContent">Ir al contenido</a>
 <aside class="sidebar" id="sidebar" aria-label="Menú principal">
@@ -28,6 +28,18 @@ $navigation = [
         </a>
       <?php endif; ?>
     <?php endforeach; ?>
+    <?php if ($rol === 'ADMIN'): ?>
+      <div class="nav-group">
+        <button id="configToggle" type="button" class="nav-link config-toggle <?= $isConfig ? 'active' : '' ?>" aria-controls="configSubmenu" aria-expanded="<?= $isConfig ? 'true' : 'false' ?>" title="Configuración">
+          <i class="bi bi-gear" aria-hidden="true"></i><span class="nav-label">Configuración</span><i class="bi bi-chevron-down config-caret" aria-hidden="true"></i>
+        </button>
+        <div id="configSubmenu" class="config-submenu" <?= $isConfig ? '' : 'hidden' ?>>
+          <?php foreach ([['gestion','people','Gestión'],['sistema','activity','Sistema'],['exportaciones','download','Exportaciones']] as [$section,$icon,$label]): ?>
+            <a class="subnav-link <?= $activePage === 'config_'.$section ? 'active' : '' ?>" href="/Control-Acceso/configuracion/<?= $section ?>.php" <?= $activePage === 'config_'.$section ? 'aria-current="page"' : '' ?>><i class="bi bi-<?= $icon ?>" aria-hidden="true"></i><span><?= $label ?></span></a>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    <?php endif; ?>
   </nav>
   <div class="sidebar-footer">
     <div class="service-state" role="status" aria-live="polite">

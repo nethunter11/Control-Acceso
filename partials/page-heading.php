@@ -5,6 +5,9 @@ $pageInfo = [
   'registros' => ['Seguimiento', 'Registros de acceso', 'Consulta movimientos, resultados y operadores.'],
   'reportes' => ['Seguimiento', 'Reportes', 'Revisa la actividad de acceso y su distribución en el tiempo.'],
   'config' => ['Administración', 'Configuración', 'Administra usuarios, revisa el sistema y exporta tus registros.'],
+  'config_gestion' => ['Configuración', 'Gestión de usuarios', 'Administra las cuentas, roles y permisos del sistema.'],
+  'config_sistema' => ['Configuración', 'Sistema', 'Supervisa el equipo que ejecuta XAMPP y el estado de la base de datos.'],
+  'config_exportaciones' => ['Configuración', 'Exportaciones', 'Descarga registros completos o selecciona un día de consulta.'],
 ][$activePage ?? ''] ?? ['Control de acceso', 'Panel operativo', ''];
 ?>
 <div class="page-heading">
