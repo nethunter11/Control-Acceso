@@ -10,6 +10,7 @@ putenv('CONTROL_ACCESO_ENV=testing');
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
+require_once __DIR__ . '/../app/puestos.php';
 
 function rut_test_response(string $cookie, array $payload, bool $jsonBody): array {
   $http = curl_init('http://localhost:8081/Control-Acceso/api/registrar_evento.php');
@@ -101,12 +102,12 @@ try {
       $cookie = $config['session']['name'] . '=' . $fixtureId;
       foreach (['ENTRADA', 'SALIDA'] as $type) {
         foreach ([true, false] as $jsonBody) {
-          $payload = array_merge($case['payload'], ['tipo' => $type, 'modo' => 'VEHICULO', 'puesto' => 'PRUEBA_RUT']);
+          $payload = array_merge($case['payload'], ['tipo' => $type, 'modo' => 'VEHICULO', 'puesto' => PUESTOS_ACCESO[0]]);
           $response = rut_test_response($cookie, $payload, $jsonBody);
           rut_test_assert(($response['ok'] ?? null) === true && ($response['resultado'] ?? '') === 'RECHAZADO', 'Respuesta incorrecta: ' . $label);
           rut_test_assert(($response['guardado'] ?? null) === false, 'El rechazo debe informar que no se guardó: ' . $label);
           rut_test_assert(($response['rut'] ?? null) === $case['rut'] && str_contains($response['motivo'] ?? '', $case['motivo']), 'RUT o motivo incorrecto: ' . $label);
-          rut_test_assert(($response['tipo'] ?? '') === $type && ($response['modo'] ?? '') === 'VEHICULO' && ($response['puesto'] ?? '') === 'PRUEBA_RUT', 'Faltan los campos utilizados por la pantalla: ' . $label);
+          rut_test_assert(($response['tipo'] ?? '') === $type && ($response['modo'] ?? '') === 'VEHICULO' && ($response['puesto'] ?? '') === PUESTOS_ACCESO[0], 'Faltan los campos utilizados por la pantalla: ' . $label);
           rut_test_assert(array_key_exists('funcionario', $response) && $response['funcionario'] === null, 'Un RUT rechazado sin registro no debe devolver un funcionario: ' . $label);
           $checks++;
         }

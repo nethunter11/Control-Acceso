@@ -6,6 +6,7 @@ require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/concurrencia.php';
+require_once __DIR__ . '/../app/puestos.php';
 
 require_roles(['ADMIN','GUARDIA']);
 
@@ -47,7 +48,13 @@ try {
     ? rut_normalizar($rutIngresado)
     : '';
   $tipo = strtoupper(trim($data['tipo'] ?? ''));
-  $puesto = trim($data['puesto'] ?? 'Portón 1');
+  $puestoIngresado = array_key_exists('puesto', $data) ? $data['puesto'] : PUESTOS_ACCESO[0];
+  $puesto = is_string($puestoIngresado) ? trim($puestoIngresado) : null;
+  if (!in_array($puesto, PUESTOS_ACCESO, true)) {
+    http_response_code(422);
+    echo json_encode(['ok'=>false,'error'=>'Selecciona un puesto válido.'], JSON_UNESCAPED_UNICODE);
+    exit;
+  }
   $modo = strtoupper(trim($data['modo'] ?? 'PEATONAL'));
   if (!in_array($modo, ['PEATONAL','VEHICULO'], true)) $modo = 'PEATONAL';
   if (!in_array($tipo, ['ENTRADA','SALIDA'], true)) {

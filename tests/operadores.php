@@ -9,6 +9,7 @@ putenv('CONTROL_ACCESO_ENV=testing');
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
+require_once __DIR__ . '/../app/puestos.php';
 
 function operator_assert(bool $condition, string $message): void {
   if (!$condition) {
@@ -108,29 +109,29 @@ try {
   $legacy = $pdo->prepare("INSERT INTO registros_acceso (rut,tipo,modo,fecha_hora,puesto,operador_id,resultado) VALUES (?,'ENTRADA','PEATONAL',NOW(),?,NULL,'APROBADO')");
   $legacy->execute([$legacyRut,$marker]);
 
-  $entry = operator_json($fixtures['ADMIN'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>$marker,'operador_id'=>$operators['GUARDIA']['id']]);
+  $entry = operator_json($fixtures['ADMIN'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>PUESTOS_ACCESO[0],'operador_id'=>$operators['GUARDIA']['id']]);
   operator_assert($entry['resultado'] === 'APROBADO' && ($entry['guardado'] ?? false) && (int)$entry['operador_id'] === (int)$operators['ADMIN']['id'], 'La entrada no identificó al operador de la sesión.');
-  $duplicate = operator_json($fixtures['GUARDIA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>$marker]);
+  $duplicate = operator_json($fixtures['GUARDIA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>PUESTOS_ACCESO[0]]);
   operator_assert($duplicate['resultado'] === 'RECHAZADO' && $duplicate['guardado'] === false, 'Una solicitud duplicada creó un nuevo registro.');
-  $exit = operator_json($fixtures['GUARDIA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'SALIDA','puesto'=>$marker,'operador_id'=>$operators['ADMIN']['id']]);
+  $exit = operator_json($fixtures['GUARDIA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'SALIDA','puesto'=>PUESTOS_ACCESO[0],'operador_id'=>$operators['ADMIN']['id']]);
   operator_assert($exit['resultado'] === 'APROBADO' && (int)$exit['operador_id'] === (int)$operators['GUARDIA']['id'], 'La salida no identificó al segundo operador.');
   echo "OK: entrada y salida conservan operadores distintos e ignoran un ID falsificado en la petición\n";
 
-  $stored = $pdo->prepare('SELECT tipo, operador_id FROM registros_acceso WHERE rut=? AND puesto=? ORDER BY id');
-  $stored->execute([$activeRut,$marker]);
+  $stored = $pdo->prepare('SELECT tipo, operador_id FROM registros_acceso WHERE rut=? ORDER BY id');
+  $stored->execute([$activeRut]);
   $movements = $stored->fetchAll();
   operator_assert(count($movements) === 2 && (int)$movements[0]['operador_id'] === (int)$operators['ADMIN']['id'] && (int)$movements[1]['operador_id'] === (int)$operators['GUARDIA']['id'], 'La base no conservó los operadores correctos o el duplicado alteró el historial.');
 
   foreach ([[$inactiveRut,'ENTRADA','ADMIN'],[$withoutEntryRut,'SALIDA','GUARDIA']] as [$rut,$type,$role]) {
-    $rejected = operator_json($fixtures[$role], 'api/registrar_evento.php', ['rut'=>$rut,'tipo'=>$type,'puesto'=>$marker]);
+    $rejected = operator_json($fixtures[$role], 'api/registrar_evento.php', ['rut'=>$rut,'tipo'=>$type,'puesto'=>PUESTOS_ACCESO[0]]);
     operator_assert($rejected['resultado'] === 'RECHAZADO' && $rejected['guardado'] === true && (int)$rejected['operador_id'] === (int)$operators[$role]['id'], 'Un rechazo guardado perdió al operador.');
-    $stored->execute([$rut,$marker]);
+    $stored->execute([$rut]);
     $saved = $stored->fetchAll();
     operator_assert(count($saved) === 1 && (int)$saved[0]['operador_id'] === (int)$operators[$role]['id'], 'El rechazo no guardó correctamente al operador en MariaDB.');
   }
   echo "OK: también se identifica al operador de los rechazos que sí se guardan\n";
 
-  $invalidSession = operator_request($fixtures['INCOMPLETA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>$marker]);
+  $invalidSession = operator_request($fixtures['INCOMPLETA'], 'api/registrar_evento.php', ['rut'=>$activeRut,'tipo'=>'ENTRADA','puesto'=>PUESTOS_ACCESO[0]]);
   $invalidBody = json_decode($invalidSession['body'], true, 512, JSON_THROW_ON_ERROR);
   operator_assert($invalidSession['status'] === 401 && ($invalidBody['ok'] ?? true) === false, 'Una sesión sin identificador de operador pudo registrar un movimiento.');
 
@@ -164,7 +165,7 @@ try {
   $failed = true;
 } finally {
   foreach ($reserved as $rut) {
-    $pdo->prepare('DELETE FROM registros_acceso WHERE rut=? AND puesto=?')->execute([$rut,$marker]);
+    $pdo->prepare('DELETE FROM registros_acceso WHERE rut=?')->execute([$rut]);
   }
   foreach ($staff as $rut) {
     $pdo->prepare('DELETE FROM funcionarios WHERE rut=? AND nombres=?')->execute([$rut,$marker]);

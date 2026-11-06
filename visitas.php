@@ -66,11 +66,6 @@ $activePage = 'visitas';
                   </div>
 
                   <div class="col-12">
-                    <label class="form-label">Puesto</label>
-                    <input id="v_puesto" class="form-control form-control-dark" value="Portón 1">
-                  </div>
-
-                  <div class="col-12">
                     <label class="form-label">Motivo (opcional)</label>
                     <input id="v_motivo" class="form-control form-control-dark" placeholder="Reunión / Entrega / Visita técnica...">
                   </div>
@@ -199,13 +194,12 @@ $activePage = 'visitas';
       const rut = document.getElementById('v_rut').value.trim();
       const telefono = document.getElementById('v_tel').value.trim();
       const patente = document.getElementById('v_pat').value.trim();
-      const puesto = document.getElementById('v_puesto').value.trim() || 'Portón 1';
       const motivo = document.getElementById('v_motivo').value.trim();
 
       setButtonLoading('btnVisitaEntrada', true, 'Registrando...');
 
       try {
-        const data = await postJSON('api/visitas_entrada.php', { nombre, rut, telefono, modo: modoVisita, patente, puesto, motivo });
+        const data = await postJSON('api/visitas_entrada.php', { nombre, rut, telefono, modo: modoVisita, patente, motivo });
 
         if (!data.ok) {
           setResultado(`<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error')}</div>`);

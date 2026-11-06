@@ -112,6 +112,21 @@ corresponder a usuarios distintos. Los registros antiguos sin esa información
 aparecen como **Sin registro**; no se les asigna un operador de forma retroactiva.
 Una salida todavía pendiente se muestra con un guion.
 
+## Pórticos
+
+En Validación de acceso, **Puesto** es un desplegable con tres opciones: **Pórtico
+Principal**, **Pórtico Sur** y **Pórtico Norte**. La selección inicial es Principal.
+El servidor valida las opciones antes de registrar un movimiento.
+
+El formulario de visitas no incluye un puesto editable. Todos los nuevos ingresos
+de visitas se asignan desde el servidor a **Pórtico de Visitas**. Los nombres de
+puestos de registros históricos se conservan.
+
+`C:\xampp\php\php.exe tests\puestos.php` comprueba el desplegable, las tres opciones
+en MariaDB, el rechazo de otros valores y el pórtico fijo de visitas. Requiere un
+respaldo SQL de pruebas con restauración comprobada y el servidor iniciado; los
+datos temporales se retiran al terminar.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.

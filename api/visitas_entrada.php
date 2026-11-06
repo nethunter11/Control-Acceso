@@ -4,6 +4,7 @@ require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/concurrencia.php';
+require_once __DIR__ . '/../app/puestos.php';
 
 require_roles(['ADMIN','CONTROL_VISITA']);
 
@@ -29,7 +30,7 @@ try {
   $telefono = trim($data['telefono'] ?? '');
   $modo = strtoupper(trim($data['modo'] ?? 'PEATONAL'));
   $patente = strtoupper(trim($data['patente'] ?? ''));
-  $puesto = trim($data['puesto'] ?? 'Portón 1');
+  $puesto = PUESTO_VISITAS;
   $motivo = trim($data['motivo'] ?? '');
 
   if ($nombre === '') {

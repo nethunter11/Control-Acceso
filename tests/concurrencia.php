@@ -10,6 +10,7 @@ putenv('CONTROL_ACCESO_ENV=testing');
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/concurrencia.php';
+require_once __DIR__ . '/../app/puestos.php';
 
 function concurrent_assert(bool $condition, string $message): void {
   if (!$condition) {
@@ -147,15 +148,16 @@ try {
     $staffRuts[] = $rut;
   }
 
-  // Retardo limitado a las filas de esta prueba. Así, la comprobación detecta
+  // Retardo limitado a los RUT exclusivos de esta prueba. Así, la comprobación detecta
   // la carrera incluso en un equipo rápido y con el historial inicialmente vacío.
   foreach ([['registros_acceso','INSERT'], ['visitas','INSERT'], ['visitas','UPDATE']] as $index => [$table,$event]) {
     $trigger = 'qa_conc_' . $suffix . '_' . $index;
-    $pdo->exec("CREATE TRIGGER {$trigger} BEFORE {$event} ON {$table} FOR EACH ROW BEGIN IF NEW.puesto = '{$marker}' THEN DO SLEEP(0.25); END IF; END");
+    $testRutList = implode(',', array_map(fn($testRut) => $pdo->quote($testRut), $reserved));
+    $pdo->exec("CREATE TRIGGER {$trigger} BEFORE {$event} ON {$table} FOR EACH ROW BEGIN IF NEW.rut IN ({$testRutList}) THEN DO SLEEP(0.25); END IF; END");
     $triggers[] = $trigger;
   }
 
-  $movement = ['rut'=>$staffRut, 'tipo'=>'ENTRADA', 'puesto'=>$marker];
+  $movement = ['rut'=>$staffRut, 'tipo'=>'ENTRADA', 'puesto'=>PUESTOS_ACCESO[0]];
   concurrent_results(concurrent_batch('registrar_evento.php', $movement, $operatorId), 1, 'primera entrada de funcionario');
   concurrent_results(concurrent_batch('registrar_evento.php', $movement, $operatorId), 0, 'entrada repetida');
   $movement['tipo'] = 'SALIDA';
@@ -166,7 +168,7 @@ try {
   $sequence->execute([$staffRut]);
   concurrent_assert($sequence->fetchAll(PDO::FETCH_COLUMN) === ['ENTRADA','SALIDA','ENTRADA'], 'El historial no mantuvo la alternancia de movimientos.');
 
-  $visit = ['rut'=>$visitorRut, 'nombre'=>$marker, 'puesto'=>$marker];
+  $visit = ['rut'=>$visitorRut, 'nombre'=>$marker];
   $visitorResponses = concurrent_batch('visitas_entrada.php', $visit, $operatorId);
   concurrent_results($visitorResponses, 1, 'primera entrada de visita');
   $visitIds = array_values(array_filter(array_map(fn($response) => $response['body']['resultado'] === 'APROBADO' ? (int)$response['body']['id'] : null, $visitorResponses)));
@@ -179,7 +181,7 @@ try {
   concurrent_assert((int)$openVisits->fetchColumn() === 1, 'Se crearon varias visitas abiertas para el mismo RUT.');
 
   ejecutar_por_rut($pdo, 'funcionarios', $staffRut, function () use ($otherStaffRut, $marker, $operatorId): array {
-    $responses = concurrent_batch('registrar_evento.php', ['rut'=>$otherStaffRut,'tipo'=>'ENTRADA','puesto'=>$marker], $operatorId, 1);
+    $responses = concurrent_batch('registrar_evento.php', ['rut'=>$otherStaffRut,'tipo'=>'ENTRADA','puesto'=>PUESTOS_ACCESO[0]], $operatorId, 1);
     concurrent_results($responses, 1, 'otro RUT puede registrar mientras el primero está bloqueado');
     return ['ok'=>true];
   });
@@ -219,8 +221,8 @@ try {
     $pdo->exec('DROP TRIGGER ' . $trigger);
   }
   foreach ($reserved as $rut) {
-    $pdo->prepare('DELETE FROM registros_acceso WHERE rut=? AND puesto=?')->execute([$rut, $marker]);
-    $pdo->prepare('DELETE FROM visitas WHERE rut=? AND puesto=?')->execute([$rut, $marker]);
+    $pdo->prepare('DELETE FROM registros_acceso WHERE rut=?')->execute([$rut]);
+    $pdo->prepare('DELETE FROM visitas WHERE rut=?')->execute([$rut]);
   }
   foreach ($staffRuts as $rut) {
     $pdo->prepare('DELETE FROM funcionarios WHERE rut=? AND nombres=?')->execute([$rut, $marker]);

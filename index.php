@@ -3,6 +3,7 @@
 require_once __DIR__ . '/app/auth.php';
 require_login();
 require_roles(['ADMIN','GUARDIA']);   
+require_once __DIR__ . '/app/puestos.php';
 $activePage = 'validacion';
 ?>
 
@@ -62,8 +63,12 @@ $activePage = 'validacion';
                   </div>
 
                   <div class="col-12">
-                    <label class="form-label">Puesto</label>
-                    <input class="form-control form-control-dark" id="puesto" value="Portón 1" />
+                    <label class="form-label" for="puesto">Puesto</label>
+                    <select class="form-select form-control-dark" id="puesto">
+                      <?php foreach (PUESTOS_ACCESO as $puestoAcceso): ?>
+                        <option value="<?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?></option>
+                      <?php endforeach; ?>
+                    </select>
                   </div>
                 </div>
 
@@ -147,7 +152,10 @@ $activePage = 'validacion';
     document.getElementById('resultado').innerHTML = html;
   }
   function rutValue() { return document.getElementById('rut').value.trim(); }
-  function puestoValue() { return document.getElementById('puesto').value.trim() || 'Portón 1'; }
+  function puestoValue() {
+    const selector = document.getElementById('puesto');
+    return selector.value || selector.options[0].value;
+  }
 
   let resultadoAutoClearTimer = null;
 
@@ -281,7 +289,7 @@ function setModo(modo){
                 <i class="bi bi-geo-alt"></i>
                 <div class="func-label">Puesto</div>
               </div>
-              <div class="func-value">${escapeHtml(document.getElementById('puesto')?.value || 'Portón 1')}</div>
+              <div class="func-value">${escapeHtml(puestoValue())}</div>
             </div>
           </div>
       `);
@@ -322,7 +330,7 @@ function setModo(modo){
 
       // Fallbacks (evitan undefined)
       const rutShow = data.rut || rut;
-      const puestoShow = data.puesto || puesto || 'Portón 1';
+      const puestoShow = data.puesto || puesto || puestoValue();
       const modoShow = (data.modo === 'VEHICULO') ? 'Vehicular' : 'Peatonal';
       const nombreShow = data.funcionario?.nombres || '(sin nombre)';
       const horaShow = (data.fecha_hora || '').slice(11, 19) || '—';
