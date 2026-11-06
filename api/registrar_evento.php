@@ -5,6 +5,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/auth.php';
+require_once __DIR__ . '/../app/concurrencia.php';
 
 require_roles(['ADMIN','GUARDIA']);
 
@@ -18,8 +19,8 @@ function input_data(): array {
   return $_POST;
 }
 
-function rechazar_rut_sin_registro(string $rut, string $tipo, string $modo, string $puesto, string $motivo): void {
-  echo json_encode([
+function respuesta_rut_sin_registro(string $rut, string $tipo, string $modo, string $puesto, string $motivo): array {
+  return [
     'ok' => true,
     'resultado' => 'RECHAZADO',
     'guardado' => false,
@@ -29,8 +30,7 @@ function rechazar_rut_sin_registro(string $rut, string $tipo, string $modo, stri
     'modo' => $modo,
     'puesto' => $puesto,
     'funcionario' => null,
-  ], JSON_UNESCAPED_UNICODE);
-  exit;
+  ];
 }
 
 try {
@@ -51,104 +51,76 @@ try {
   // 1) Validación RUT
   if (!rut_es_valido($rut)) {
     // El historial de movimientos exige un funcionario existente.
-    rechazar_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT inválido (DV o formato)');
+    echo json_encode(respuesta_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT inválido (DV o formato)'), JSON_UNESCAPED_UNICODE);
+    exit;
   }
 
-  // 2) Consulta funcionario
+  // Comprobar el último movimiento y guardar el siguiente bajo el mismo bloqueo.
   $pdo = db();
-  $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
-  $st->execute([$rut]);
-  $f = $st->fetch();
+  $response = ejecutar_por_rut($pdo, 'funcionarios', $rut, function () use ($pdo, $rut, $tipo, $modo, $puesto): array {
+    $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
+    $st->execute([$rut]);
+    $f = $st->fetch();
+    if (!$f) {
+      return respuesta_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT no registrado en la institución');
+    }
 
-  if (!$f) {
-    rechazar_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT no registrado en la institución');
-  }
-
-  $resultado = 'RECHAZADO';
-  $motivo = null;
-
-  if ($f['estado'] !== 'ACTIVO') {
-    $motivo = 'Funcionario INACTIVO';
-  } else {
-    $resultado = 'APROBADO';
-  }
-    // 2.5) Reglas anti-duplicado (solo si iba a ser APROBADO)
-  if ($resultado === 'APROBADO') {
-
-    // Último evento APROBADO para este RUT (ignora los RECHAZADOS)
-    $stLast = $pdo->prepare("
-      SELECT tipo, fecha_hora
-      FROM registros_acceso
-      WHERE rut = ? AND resultado = 'APROBADO'
-      ORDER BY fecha_hora DESC, id DESC
-      LIMIT 1
-    ");
-    $stLast->execute([$rut]);
-    $last = $stLast->fetch();
-
-    if ($last) {
-      // Regla principal: no permitir dos iguales seguidos
-      if ($last['tipo'] === $tipo) {
-        $motivo = "Movimiento duplicado: la última acción aprobada fue {$last['tipo']}";
-
-        // NO guardar en BD, solo responder para mostrar el mensaje en pantalla
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-          'ok'        => true,
-          'resultado' => 'RECHAZADO',
-          'motivo'    => $motivo,
-          'guardado'  => false,
-
-          // Campos que tu UI usa para armar el recuadro
-          'rut'       => $rut,
-          'tipo'      => $tipo,
-          'modo'      => $modo,
-          'puesto'    => $puesto,
-
-          // Datos del funcionario para que la UI reciba la misma estructura que en el registro normal.
-          'funcionario' => [
-            'rut' => $f['rut'],
-            'nombres' => $f['nombres'],
-            'unidad' => $f['unidad'],
-            'grado' => $f['grado'],
-            'estado' => $f['estado'],
-          ],
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-
-      }
+    $resultado = 'RECHAZADO';
+    $motivo = null;
+    if ($f['estado'] !== 'ACTIVO') {
+      $motivo = 'Funcionario INACTIVO';
     } else {
-      // OPCIONAL (recomendado): no permitir SALIDA si nunca hubo ENTRADA aprobada
-      if ($tipo === 'SALIDA') {
+      $resultado = 'APROBADO';
+    }
+
+    if ($resultado === 'APROBADO') {
+      $stLast = $pdo->prepare("
+        SELECT tipo, fecha_hora
+        FROM registros_acceso
+        WHERE rut = ? AND resultado = 'APROBADO'
+        ORDER BY fecha_hora DESC, id DESC
+        LIMIT 1
+      ");
+      $stLast->execute([$rut]);
+      $last = $stLast->fetch();
+
+      if ($last && $last['tipo'] === $tipo) {
+        return [
+          'ok' => true,
+          'resultado' => 'RECHAZADO',
+          'motivo' => "Movimiento duplicado: la última acción aprobada fue {$last['tipo']}",
+          'guardado' => false,
+          'rut' => $rut,
+          'tipo' => $tipo,
+          'modo' => $modo,
+          'puesto' => $puesto,
+          'funcionario' => $f,
+        ];
+      }
+      if (!$last && $tipo === 'SALIDA') {
         $resultado = 'RECHAZADO';
         $motivo = 'No se puede registrar SALIDA sin una ENTRADA aprobada previa';
       }
     }
-  }
 
-
-  // 3) Registrar evento
-  $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, resultado, motivo)
-                        VALUES (?, ?, ?, NOW(), ?, ?, ?)");
-  $st2->execute([$rut, $tipo, $modo, $puesto, $resultado, $motivo]);
-
-  echo json_encode([
-    'ok' => true,
-    'rut' => $rut,
-    'tipo' => $tipo,
-    'modo' => $modo,
-    'puesto' => $puesto,
-    'resultado' => $resultado,
-    'motivo' => $motivo,
-    'funcionario' => $f ? [
-      'rut' => $f['rut'],
-      'nombres' => $f['nombres'],
-      'unidad' => $f['unidad'],
-      'grado' => $f['grado'],
-      'estado' => $f['estado'],
-    ] : null
-  ], JSON_UNESCAPED_UNICODE);
-
+    $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, resultado, motivo)
+                          VALUES (?, ?, ?, NOW(), ?, ?, ?)");
+    $st2->execute([$rut, $tipo, $modo, $puesto, $resultado, $motivo]);
+    return [
+      'ok' => true,
+      'rut' => $rut,
+      'tipo' => $tipo,
+      'modo' => $modo,
+      'puesto' => $puesto,
+      'resultado' => $resultado,
+      'motivo' => $motivo,
+      'funcionario' => $f,
+    ];
+  });
+  echo json_encode($response, JSON_UNESCAPED_UNICODE);
+} catch (BloqueoRutOcupado $e) {
+  http_response_code(409);
+  echo json_encode(['ok' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);

@@ -3,6 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/rut.php';
+require_once __DIR__ . '/../app/concurrencia.php';
 
 require_roles(['ADMIN','CONTROL_VISITA']);
 
@@ -46,31 +47,32 @@ try {
     echo json_encode(['ok'=>false,'error'=>'Patente obligatoria si viene en vehículo'], JSON_UNESCAPED_UNICODE); exit;
   }
 
-  // Regla: no permitir que el mismo RUT tenga otra visita "DENTRO"
-  $st = $pdo->prepare("SELECT id FROM visitas WHERE rut = ? AND estado = 'DENTRO' LIMIT 1");
-  $st->execute([$rut]);
-  $existeDentro = $st->fetchColumn();
-  if ($existeDentro) {
-    echo json_encode(['ok'=>true,'resultado'=>'RECHAZADO','motivo'=>'El visitante ya tiene un ingreso activo (sin salida).','guardado'=>false], JSON_UNESCAPED_UNICODE);
-    exit;
-  }
+  $response = ejecutar_por_rut($pdo, 'visitas', $rut, function () use ($pdo, $rut, $nombre, $telefono, $modo, $patente, $puesto, $u, $motivo): array {
+    $st = $pdo->prepare("SELECT id FROM visitas WHERE rut = ? AND estado = 'DENTRO' LIMIT 1");
+    $st->execute([$rut]);
+    if ($st->fetchColumn()) {
+      return ['ok'=>true,'resultado'=>'RECHAZADO','motivo'=>'El visitante ya tiene un ingreso activo (sin salida).','guardado'=>false];
+    }
 
-  $st2 = $pdo->prepare("
-    INSERT INTO visitas (nombre, rut, telefono, modo, patente, puesto, operador_id, motivo, fecha_hora_entrada, estado)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'DENTRO')
-  ");
-  $st2->execute([$nombre, $rut, $telefono ?: null, $modo, $patente ?: null, $puesto, $u['id'], $motivo ?: null]);
-
-  echo json_encode([
-    'ok'=>true,
-    'resultado'=>'APROBADO',
-    'id'=>$pdo->lastInsertId(),
-    'rut'=>$rut,
-    'nombre'=>$nombre,
-    'modo'=>$modo,
-    'puesto'=>$puesto
-  ], JSON_UNESCAPED_UNICODE);
-
+    $st2 = $pdo->prepare("
+      INSERT INTO visitas (nombre, rut, telefono, modo, patente, puesto, operador_id, motivo, fecha_hora_entrada, estado)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'DENTRO')
+    ");
+    $st2->execute([$nombre, $rut, $telefono ?: null, $modo, $patente ?: null, $puesto, $u['id'], $motivo ?: null]);
+    return [
+      'ok'=>true,
+      'resultado'=>'APROBADO',
+      'id'=>$pdo->lastInsertId(),
+      'rut'=>$rut,
+      'nombre'=>$nombre,
+      'modo'=>$modo,
+      'puesto'=>$puesto,
+    ];
+  });
+  echo json_encode($response, JSON_UNESCAPED_UNICODE);
+} catch (BloqueoRutOcupado $e) {
+  http_response_code(409);
+  echo json_encode(['ok'=>false,'error'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok'=>false,'error'=>'Error interno: '.$e->getMessage()], JSON_UNESCAPED_UNICODE);

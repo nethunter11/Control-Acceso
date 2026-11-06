@@ -27,19 +27,7 @@ try {
     echo json_encode(['ok'=>false,'error'=>'ID inválido'], JSON_UNESCAPED_UNICODE); exit;
   }
 
-  // Solo si está DENTRO
-  $st = $pdo->prepare("SELECT estado FROM visitas WHERE id = ? LIMIT 1");
-  $st->execute([$id]);
-  $estado = $st->fetchColumn();
-
-  if (!$estado) {
-    echo json_encode(['ok'=>false,'error'=>'Visita no existe'], JSON_UNESCAPED_UNICODE); exit;
-  }
-  if ($estado !== 'DENTRO') {
-    echo json_encode(['ok'=>true,'resultado'=>'RECHAZADO','motivo'=>'La visita ya tiene salida registrada.','guardado'=>false], JSON_UNESCAPED_UNICODE);
-    exit;
-  }
-
+  // La condición y el cambio se ejecutan juntos: solo una solicitud modifica la fila.
   $st2 = $pdo->prepare("
     UPDATE visitas
     SET fecha_hora_salida = NOW(),
@@ -47,6 +35,17 @@ try {
     WHERE id = ? AND estado = 'DENTRO'
   ");
   $st2->execute([$id]);
+
+  if ($st2->rowCount() !== 1) {
+    $st = $pdo->prepare('SELECT estado FROM visitas WHERE id = ? LIMIT 1');
+    $st->execute([$id]);
+    if (!$st->fetchColumn()) {
+      echo json_encode(['ok'=>false,'error'=>'Visita no existe'], JSON_UNESCAPED_UNICODE);
+      exit;
+    }
+    echo json_encode(['ok'=>true,'resultado'=>'RECHAZADO','motivo'=>'La visita ya tiene salida registrada.','guardado'=>false], JSON_UNESCAPED_UNICODE);
+    exit;
+  }
 
   echo json_encode(['ok'=>true,'resultado'=>'APROBADO','id'=>$id], JSON_UNESCAPED_UNICODE);
 

@@ -78,6 +78,27 @@ Para comprobar este comportamiento con el servidor de pruebas iniciado, ejecuta
 `C:\xampp\php\php.exe tests\rut_rechazos.php` desde la carpeta de pruebas. La prueba
 comprueba entradas y salidas para ADMIN y GUARDIA, sin agregar movimientos a la base.
 
+## Movimientos simultáneos
+
+Las API coordinan por RUT la comprobación del estado y el registro del movimiento.
+Si dos puestos solicitan la misma entrada o salida a la vez, una solicitud puede
+aprobarse y la siguiente comprueba el estado actualizado antes de responder.
+Después de una salida se puede registrar una nueva entrada normalmente.
+
+Las entradas de visitas también se coordinan por RUT. Para sus salidas, solo se
+informa `APROBADO` si la solicitud cambió efectivamente la visita de `DENTRO` a
+`SALIO`. Así se evita informar varias salidas aprobadas para una sola visita.
+
+La coordinación incluye el nombre de la base de datos: pruebas y estable son
+independientes. Los RUT distintos tampoco comparten turno. Si una solicitud espera
+más de cinco segundos, recibe HTTP `409` con un mensaje para intentar nuevamente.
+
+`C:\xampp\php\php.exe tests\concurrencia.php` comprueba las API en procesos PHP
+independientes y con sesiones distintas; no depende del servidor web. Antes de
+ejecutarlo se necesita un respaldo SQL de pruebas con restauración comprobada.
+La comprobación crea datos y retardos exclusivos para la prueba y los retira al
+terminar, verificando que las cuatro tablas conserven su contenido.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.
