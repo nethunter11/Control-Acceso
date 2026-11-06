@@ -50,8 +50,7 @@
       else if(metrics[key]>=75)items.push(notice(label+': uso elevado',percent(metrics[key])+' utilizado.','warning'));
     }
     if(!database.ok)items.push(notice('Base de datos sin conexión','No se pudo completar la consulta de diagnóstico.','danger'));
-    if(!number(metrics.temperature_c))items.push(notice('Sensor térmico no disponible','Este equipo no entrega una lectura compatible a Windows.','warning'));
-    else items.push(notice('Sensor de zona térmica',metrics.temperature_note));
+    items.push(notice('Temperatura de demostración','La tarjeta muestra 45 °C como referencia fija; no es una medición del equipo.'));
     if(!items.length)items.push(notice('Lecturas disponibles','No hay avisos de uso elevado en esta lectura.'));
     list.replaceChildren(...items);
   }
@@ -118,10 +117,6 @@
     metric('cpu',metrics.cpu_percent,number(metrics.cpu_percent)?'Uso total del procesador':'No se pudo obtener el contador de CPU');
     metric('ram',metrics.ram_percent,number(metrics.ram_percent)?gib(metrics.ram_used_bytes)+' / '+gib(metrics.ram_total_bytes)+' GiB utilizados':'Memoria física no disponible');
     metric('disk',metrics.disk_percent,number(metrics.disk_percent)?gib(metrics.disk_free_bytes)+' GiB libres de '+gib(metrics.disk_total_bytes)+' GiB':'Lectura del volumen no disponible');
-    text('temperatureValue',number(metrics.temperature_c)?format.format(metrics.temperature_c)+' °C':'No disponible');
-    byId('temperatureValue').classList.toggle('is-unavailable',!number(metrics.temperature_c));
-    text('temperatureSource',number(metrics.temperature_c)?'Zona térmica ACPI':'Sin sensor compatible');
-    text('temperatureDetail',number(metrics.temperature_c)?'Máxima de las zonas disponibles; no es la temperatura interna de CPU.':'Windows no proporciona una temperatura compatible.');
     text('ramRingValue',percent(metrics.ram_percent));
     byId('ramRing').style.setProperty('--level',number(metrics.ram_percent)?metrics.ram_percent:0);
     text('ramSummary',number(metrics.ram_percent)?gib(metrics.ram_used_bytes)+' de '+gib(metrics.ram_total_bytes)+' GiB en uso':'No disponible');

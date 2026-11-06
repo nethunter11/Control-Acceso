@@ -24,9 +24,9 @@ include __DIR__.'/../partials/config-header.php';
     </article>
     <article class="system-metric system-metric-amber" id="temperatureCard">
       <div class="system-metric-top"><span>Temperatura</span><i class="bi bi-thermometer-half" aria-hidden="true"></i></div>
-      <div class="system-value" id="temperatureValue">—</div>
-      <div class="system-temperature-source" id="temperatureSource">Consultando sensor</div>
-      <div class="system-metric-detail" id="temperatureDetail">Zona térmica del equipo</div>
+      <div class="system-value" id="temperatureValue">45 °C</div>
+      <div class="system-temperature-source" id="temperatureSource">Temperatura de referencia</div>
+      <div class="system-metric-detail" id="temperatureDetail">Valor fijo de demostración</div>
     </article>
     <article class="system-metric system-metric-pink" id="diskCard">
       <div class="system-metric-top"><span>Almacenamiento</span><i class="bi bi-hdd" aria-hidden="true"></i></div>
@@ -70,7 +70,7 @@ include __DIR__.'/../partials/config-header.php';
       <div class="system-panel-heading"><h2>Últimas lecturas</h2><span class="system-panel-caption">CPU / RAM / disco / sensor</span></div>
       <div class="table-responsive">
         <table class="table table-dark align-middle mb-0">
-          <thead><tr><th>Hora</th><th>CPU</th><th>RAM</th><th>Disco usado</th><th>Temperatura</th></tr></thead>
+          <thead><tr><th>Hora</th><th>CPU</th><th>RAM</th><th>Disco usado</th><th>Temperatura real</th></tr></thead>
           <tbody id="systemRecent"><tr><td colspan="5" class="text-muted">Esperando la primera lectura…</td></tr></tbody>
         </table>
       </div>

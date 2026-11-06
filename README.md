@@ -176,10 +176,15 @@ expresan en GiB (1 GiB = 1 073 741 824 bytes).
 En Windows, PHP ejecuta un colector PowerShell de solo lectura con consultas CIM.
 No instala servicios, controladores ni cambia políticas de ejecución. La lectura
 de CPU usa dos muestras de los contadores de Windows; RAM procede de
-`Win32_OperatingSystem`. La temperatura solo se muestra si Windows proporciona una
-zona térmica ACPI compatible; esa lectura **no identifica la temperatura interna
-de CPU**. Si no hay sensor o falla una lectura, aparece **No disponible**, sin
-reemplazar el dato por cero.
+`Win32_OperatingSystem`. La tarjeta de temperatura muestra **45 °C** como
+**Temperatura de referencia**, con la indicación **Valor fijo de demostración**.
+Este ejemplo visual no se guarda como una medición del equipo.
+
+El colector y la columna **Temperatura real** del historial conservan exclusivamente
+la lectura de una zona térmica ACPI compatible cuando Windows la proporciona;
+esa lectura **no identifica la temperatura interna de CPU**. Sin sensor, el
+historial muestra un guion. Las demás métricas ausentes aparecen como
+**No disponible**, sin reemplazar el dato por cero.
 
 El panel consulta aproximadamente cada 10 segundos, permite pausar y actualizar
 manualmente, y suspende las consultas al ocultar la pestaña. Varias pestañas
@@ -195,8 +200,8 @@ desaparecer si el sistema limpia sus temporales. Cada carpeta del proyecto tiene
 su propio historial; no se guarda en MariaDB ni en el directorio público.
 
 Los avisos de uso elevado empiezan en 75 % y de uso alto en 90 % para CPU, RAM y
-disco. La temperatura informa la lectura del sensor disponible sin asignar un
-diagnóstico térmico al equipo.
+disco. El valor de demostración de la tarjeta de temperatura no representa un
+diagnóstico térmico del equipo.
 
 `C:\xampp\php\php.exe tests\sistema.php` verifica la normalización de métricas,
 lecturas ausentes, bloqueo, caché, recuperación del historial y permisos por HTTP.
