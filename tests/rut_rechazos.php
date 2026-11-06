@@ -83,10 +83,14 @@ try {
     'RUT con puntos y DV minúscula' => ['payload' => ['rut' => $formattedUnknown], 'rut' => $unknownRut, 'motivo' => 'RUT no registrado'],
   ];
 
-  // Sesiones sintéticas exclusivas del entorno de pruebas; no se crean usuarios.
+  // Sesiones temporales de operadores existentes; no se crean usuarios.
+  $operatorLookup = $connection->prepare('SELECT id, username, rol FROM usuarios WHERE rol = ? AND activo = 1 ORDER BY id LIMIT 1');
   foreach (['ADMIN', 'GUARDIA'] as $role) {
+    $operatorLookup->execute([$role]);
+    $operator = $operatorLookup->fetch();
+    rut_test_assert($operator !== false, 'Se necesita un operador activo con rol ' . $role . ' en pruebas.');
     session_id(bin2hex(random_bytes(16)));
-    auth_login(['id' => -1, 'username' => 'prueba_rut', 'rol' => $role]);
+    auth_login($operator);
     $fixtures[$role] = session_id();
     session_write_close();
   }

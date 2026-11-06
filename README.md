@@ -99,6 +99,19 @@ ejecutarlo se necesita un respaldo SQL de pruebas con restauración comprobada.
 La comprobación crea datos y retardos exclusivos para la prueba y los retira al
 terminar, verificando que las cuatro tablas conserven su contenido.
 
+## Operador de cada movimiento
+
+Cada nuevo movimiento guardado de funcionarios conserva `operador_id`, tomado de
+la sesión del usuario que lo registra. El navegador no puede elegir el operador
+enviando otro identificador. Se aplica tanto a los movimientos aprobados como a los
+rechazos que sí se guardan en el historial.
+
+La API del historial identifica al operador. En la pantalla de registros se
+muestran **Operador entrada** y **Operador salida**, porque pueden
+corresponder a usuarios distintos. Los registros antiguos sin esa información
+aparecen como **Sin registro**; no se les asigna un operador de forma retroactiva.
+Una salida todavía pendiente se muestra con un guion.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.

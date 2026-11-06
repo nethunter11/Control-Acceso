@@ -151,7 +151,7 @@ $activePage = 'registros';
       <table class="table table-dark table-hover align-middle mb-0">
         <thead>
           <tr>
-            <th>RUT</th><th>Entrada</th><th>Salida</th><th>Modo</th><th>Puesto</th><th>Resultado</th><th>Motivo</th>
+            <th>RUT</th><th>Entrada</th><th>Operador entrada</th><th>Salida</th><th>Operador salida</th><th>Modo</th><th>Puesto</th><th>Resultado</th><th>Motivo</th>
           </tr>
         </thead><tbody>`;
 
@@ -165,7 +165,9 @@ $activePage = 'registros';
         html += `<tr>
         <td>${escapeHtml(r.rut)}</td>
         <td>${escapeHtml(r.entrada || '')}</td>
+        <td>${escapeHtml(r.operador_entrada || 'Sin registro')}</td>
         <td>${escapeHtml(r.salida || '')}</td>
+        <td>${escapeHtml(r.salida ? (r.operador_salida || 'Sin registro') : '—')}</td>
         <td>${escapeHtml(modoLabel)}</td>
         <td>${escapeHtml(r.puesto || '')}</td>
         <td>${badge}</td>

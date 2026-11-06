@@ -48,6 +48,7 @@ try {
         puesto,
         resultado,
         motivo,
+        operador_id,
         fecha_hora AS entrada,
         ROW_NUMBER() OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS rn
       FROM registros_acceso
@@ -57,6 +58,7 @@ try {
       SELECT
         id,
         rut,
+        operador_id,
         fecha_hora AS salida,
         ROW_NUMBER() OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS rn
       FROM registros_acceso
@@ -70,10 +72,16 @@ try {
       e.puesto,
       e.resultado,
       e.motivo,
+      e.operador_id AS operador_entrada_id,
+      s.operador_id AS operador_salida_id,
+      ue.username AS operador_entrada,
+      us.username AS operador_salida,
       e.entrada AS _orden
     FROM entradas e
     LEFT JOIN salidas s
       ON s.rut = e.rut AND s.rn = e.rn
+    LEFT JOIN usuarios ue ON ue.id = e.operador_id
+    LEFT JOIN usuarios us ON us.id = s.operador_id
   ";
 
   if (count($where) > 0) {

@@ -9,6 +9,13 @@ require_once __DIR__ . '/../app/concurrencia.php';
 
 require_roles(['ADMIN','GUARDIA']);
 
+$operadorId = (int)(auth_user()['id'] ?? 0);
+if ($operadorId <= 0) {
+  http_response_code(401);
+  echo json_encode(['ok'=>false,'error'=>'Tu sesión no identifica al operador. Vuelve a iniciar sesión.'], JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 function input_data(): array {
   $ct = $_SERVER['CONTENT_TYPE'] ?? '';
   if (stripos($ct, 'application/json') !== false) {
@@ -57,7 +64,7 @@ try {
 
   // Comprobar el último movimiento y guardar el siguiente bajo el mismo bloqueo.
   $pdo = db();
-  $response = ejecutar_por_rut($pdo, 'funcionarios', $rut, function () use ($pdo, $rut, $tipo, $modo, $puesto): array {
+  $response = ejecutar_por_rut($pdo, 'funcionarios', $rut, function () use ($pdo, $rut, $tipo, $modo, $puesto, $operadorId): array {
     $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
     $st->execute([$rut]);
     $f = $st->fetch();
@@ -103,9 +110,9 @@ try {
       }
     }
 
-    $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, resultado, motivo)
-                          VALUES (?, ?, ?, NOW(), ?, ?, ?)");
-    $st2->execute([$rut, $tipo, $modo, $puesto, $resultado, $motivo]);
+    $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, operador_id, resultado, motivo)
+                          VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)");
+    $st2->execute([$rut, $tipo, $modo, $puesto, $operadorId, $resultado, $motivo]);
     return [
       'ok' => true,
       'rut' => $rut,
@@ -114,6 +121,8 @@ try {
       'puesto' => $puesto,
       'resultado' => $resultado,
       'motivo' => $motivo,
+      'guardado' => true,
+      'operador_id' => $operadorId,
       'funcionario' => $f,
     ];
   });

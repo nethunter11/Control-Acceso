@@ -24,33 +24,35 @@ try {
 
   if ($rut !== '') {
     // Búsqueda flexible: contiene
-    $where[] = "rut LIKE ?";
+    $where[] = "r.rut LIKE ?";
     $params[] = "%" . $rut . "%";
   }
 
   if (in_array($resultado, ['APROBADO', 'RECHAZADO'], true)) {
-    $where[] = "resultado = ?";
+    $where[] = "r.resultado = ?";
     $params[] = $resultado;
   }
 
   if ($desde !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
-    $where[] = "fecha_hora >= ?";
+    $where[] = "r.fecha_hora >= ?";
     $params[] = $desde . " 00:00:00";
   }
 
   if ($hasta !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
-    $where[] = "fecha_hora <= ?";
+    $where[] = "r.fecha_hora <= ?";
     $params[] = $hasta . " 23:59:59";
   }
 
-  $sql = "SELECT id, rut, tipo, modo, fecha_hora, puesto, resultado, motivo
-          FROM registros_acceso";
+  $sql = "SELECT r.id, r.rut, r.tipo, r.modo, r.fecha_hora, r.puesto, r.resultado, r.motivo,
+                 r.operador_id, u.username AS operador
+          FROM registros_acceso r
+          LEFT JOIN usuarios u ON u.id = r.operador_id";
 
   if (count($where) > 0) {
     $sql .= " WHERE " . implode(" AND ", $where);
   }
 
-  $sql .= " ORDER BY fecha_hora DESC, id DESC LIMIT " . $limit;
+  $sql .= " ORDER BY r.fecha_hora DESC, r.id DESC LIMIT " . $limit;
 
   $st = $pdo->prepare($sql);
   $st->execute($params);
