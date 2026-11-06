@@ -1,100 +1,49 @@
 <?php
 require_once __DIR__ . '/app/auth.php';
-require_login();
 require_roles(['ADMIN','GUARDIA','AUDITOR']);
 $activePage = 'registros';
 ?>
-
 <!doctype html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Registros | Control Acceso</title>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registros | Control de Acceso</title>
   <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
-
-  <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
-  <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
+  <link href="/Control-Acceso/assets/css/theme.css?v=<?= filemtime(__DIR__.'/assets/css/theme.css') ?>" rel="stylesheet">
 </head>
-
 <body>
-  <div class="app">
-    <!-- SIDEBAR -->
-    <?php include __DIR__ . '/partials/sidebar.php'; ?>
+<div class="app">
+  <?php include __DIR__ . '/partials/sidebar.php'; ?>
+  <main class="main" id="mainContent" tabindex="-1">
+    <?php include __DIR__ . '/partials/topbar.php'; ?>
+    <section class="content">
+      <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
-    <!-- MAIN -->
-    <main class="main">
-      <!-- TOPBAR -->
-      <?php include __DIR__ . '/partials/topbar.php'; ?>
-
-      <!-- CONTENT -->
-      <section class="content">
-        <div class="card card-dark">
-          <div class="card-header card-header-dark">
-            <div class="d-flex align-items-center justify-content-between">
-              <div>
-                <div class="h6 mb-0">Registros</div>
-                <div class="text-muted small">Búsqueda y filtros</div>
+      <div class="card card-dark">
+        <div class="card-header card-header-dark"><div class="d-flex align-items-center justify-content-between"><div><h2 class="h6 mb-0">Historial de movimientos</h2><div class="text-muted small">Filtra por fecha, RUT y resultado de la validación.</div></div><button id="btnRegRefresh" class="btn btn-sm btn-outline-light" onclick="cargarUltimos()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_fecha">Fecha</label><input id="f_fecha" type="date" class="form-control form-control-dark"></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_rut">RUT</label><input id="f_rut" class="form-control form-control-dark" placeholder="12345678-5" autocomplete="off"></div>
+            <div class="col-12 col-sm-6 col-xl-3">
+              <div class="form-label" id="resultFilterLabel">Resultado</div>
+              <div class="dropdown">
+                <button class="btn form-control-dark w-100 d-flex justify-content-between align-items-center" type="button" id="btnResultado" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="resultFilterLabel resultadoText"><span id="resultadoText">Todos</span><i class="bi bi-chevron-down" aria-hidden="true"></i></button>
+                <ul class="dropdown-menu dropdown-menu-dark w-100" aria-labelledby="btnResultado"><li><a class="dropdown-item" href="#" data-val="">Todos</a></li><li><a class="dropdown-item" href="#" data-val="APROBADO">Aprobado</a></li><li><a class="dropdown-item" href="#" data-val="RECHAZADO">Rechazado</a></li></ul>
+                <input type="hidden" id="f_resultado" value="">
               </div>
-              <button id="btnRegRefresh" class="btn btn-sm btn-outline-light" onclick="cargarUltimos()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
-              </button>
             </div>
+            <div class="col-12 col-sm-6 col-xl-3 d-flex gap-2"><button id="btnRegAplicar" class="btn btn-primary flex-grow-1" onclick="cargarUltimos()"><i class="bi bi-funnel" aria-hidden="true"></i>Aplicar</button><button class="btn btn-outline-secondary" onclick="limpiarFiltros()">Limpiar</button></div>
           </div>
-
-          <div class="card-body">
-            <!-- FILTROS -->
-            <div class="row g-2">
-              <div class="col-6 col-md-3">
-                <label class="form-label">Fecha</label>
-                <input id="f_fecha" type="date" class="form-control form-control-dark">
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label class="form-label">RUT</label>
-                <input id="f_rut" class="form-control form-control-dark" placeholder="Ej: 12345678-5">
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label class="form-label">Resultado</label>
-
-                <div class="dropdown">
-                  <button class="btn form-control-dark w-100 d-flex justify-content-between align-items-center"
-                          type="button" id="btnResultado" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span id="resultadoText">Todos</span>
-                    <i class="bi bi-chevron-down"></i>
-                  </button>
-
-                  <ul class="dropdown-menu dropdown-menu-dark w-100" aria-labelledby="btnResultado">
-                    <li><a class="dropdown-item" href="#" data-val="">Todos</a></li>
-                    <li><a class="dropdown-item" href="#" data-val="APROBADO">APROBADO</a></li>
-                    <li><a class="dropdown-item" href="#" data-val="RECHAZADO">RECHAZADO</a></li>
-                  </ul>
-                  <input type="hidden" id="f_resultado" value="">
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex gap-2 flex-wrap mt-2">
-              <button id="btnRegAplicar" class="btn btn-primary" onclick="cargarUltimos()">
-                <i class="bi bi-funnel me-1"></i>Aplicar
-              </button>
-              <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">Limpiar</button>
-            </div>
-
-            <!-- TABLA -->
-            <div class="mt-3 table-wrap" id="tabla"></div>
-          </div>
+          <div class="mt-4 table-wrap" id="tabla"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div>
         </div>
-      </section>
-    </main>
-  </div>
-
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/js/ui.js"></script>
-
+      </div>
+    </section>
+  </main>
+</div>
+<?php include __DIR__ . '/partials/scripts.php'; ?>
   <script>
   function escapeHtml(s) {
     return String(s)
@@ -176,6 +125,7 @@ $activePage = 'registros';
 
       }
 
+      if (rows.length === 0) html += "<tr><td colspan=\"9\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No hay movimientos que coincidan con los filtros.</div></td></tr>";
       html += `</tbody></table></div>`;
       document.getElementById('tabla').innerHTML = html;
     } catch (err) {

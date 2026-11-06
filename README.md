@@ -161,6 +161,29 @@ límites de medianoche, visitas entre días, permisos y contenido de los CSV. Re
 el servidor de pruebas y un respaldo SQL con restauración comprobada. Retira sus
 datos temporales y verifica el contenido de las cuatro tablas al terminar.
 
+## Diseño y lectura en pórticos
+
+El inicio de sesión y las cinco secciones comparten una identidad institucional
+oscura: azul marino, superficies de alto contraste, controles amplios y tablas
+contenidas en paneles con desplazamiento horizontal cuando hace falta espacio.
+Se conserva el escudo institucional y se unifican los textos en español.
+
+El botón **Contraste** activa una variante oscura con textos y bordes más marcados.
+La preferencia se guarda en ese navegador. El menú puede contraerse en escritorio;
+en pantallas pequeñas se abre sobre el contenido y se cierra con el botón de
+cierre, al pulsar fuera o con **Escape**. Las páginas admiten navegación por teclado
+y un enlace **Ir al contenido**.
+
+En Validación, las acciones principales son **Registrar entrada** y **Registrar
+salida**. Se mantienen el atajo Enter para registrar una entrada desde RUT, la
+consulta independiente, los puestos permitidos y las reglas de registro.
+Reportes conserva los indicadores y distingue entradas en azul y salidas en ámbar.
+Los listados vacíos muestran un mensaje para distinguirlos de una carga pendiente.
+
+El punto anterior al rediseño está identificado por
+`respaldo-pruebas-2026-11-06` (commit `48229d0`). El cambio visual se prepara en
+`pruebas` para revisarlo antes de integrarlo en la versión estable.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.

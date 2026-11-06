@@ -1,159 +1,53 @@
-<script src="assets/vendor/chartjs/chart.umd.min.js"></script>
 <?php
 require_once __DIR__ . '/app/auth.php';
-require_login();
-require_roles(['ADMIN','AUDITOR']); 
+require_roles(['ADMIN','AUDITOR']);
 $activePage = 'reportes';
 ?>
 <!doctype html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reportes | Control Acceso</title>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes | Control de Acceso</title>
   <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
-
-  <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
-  <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
+  <link href="/Control-Acceso/assets/css/theme.css?v=<?= filemtime(__DIR__.'/assets/css/theme.css') ?>" rel="stylesheet">
 </head>
-
 <body>
-  <div class="app">
-    <?php include __DIR__ . '/partials/sidebar.php'; ?>
+<div class="app">
+  <?php include __DIR__ . '/partials/sidebar.php'; ?>
+  <main class="main" id="mainContent" tabindex="-1">
+    <?php include __DIR__ . '/partials/topbar.php'; ?>
+    <section class="content">
+      <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
-    <main class="main">
-      <?php include __DIR__ . '/partials/topbar.php'; ?>
-
-      <section class="content">
-        <div class="card card-dark mb-3">
-          <div class="card-header card-header-dark">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="h6 mb-0">Reportes</div>
-                <div class="text-muted small">Entradas (tipo ENTRADA) - Aprobados y Rechazados</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <!-- Filtros -->
-            <div class="row g-2 align-items-end">
-              <div class="col-12 col-md-3">
-                <label class="form-label">Periodo</label>
-                <select id="f_periodo" class="form-select form-control-dark">
-                  <option value="hoy">Hoy</option>
-                  <option value="ayer">Ayer</option>
-                  <option value="7d" selected>Últimos 7 días</option>
-                  <option value="30d">Últimos 30 días</option>
-                  <option value="rango">Rango</option>
-                </select>
-              </div>
-
-              <div class="col-6 col-md-3">
-                <label class="form-label">Desde</label>
-                <input id="f_desde" type="date" class="form-control form-control-dark">
-              </div>
-
-              <div class="col-6 col-md-3">
-                <label class="form-label">Hasta</label>
-                <input id="f_hasta" type="date" class="form-control form-control-dark">
-              </div>
-
-              <div class="col-12 col-md-3 d-flex gap-2">
-                <button class="btn btn-primary w-100" onclick="cargarTodo()">
-                  <i class="bi bi-funnel me-1"></i>Aplicar
-                </button>
-                <button class="btn btn-outline-secondary w-100" onclick="resetHoy()">
-                  <i class="bi bi-x-circle me-1"></i>Hoy
-                </button>
-              </div>
-            </div>
+      <div class="card card-dark mb-4">
+        <div class="card-header card-header-dark"><h2 class="h6 mb-0">Periodo de consulta</h2><div class="text-muted small">Indicadores de entradas aprobadas y rechazadas.</div></div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_periodo">Periodo</label><select id="f_periodo" class="form-select form-control-dark"><option value="hoy">Hoy</option><option value="ayer">Ayer</option><option value="7d" selected>Últimos 7 días</option><option value="30d">Últimos 30 días</option><option value="rango">Rango personalizado</option></select></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_desde">Desde</label><input id="f_desde" type="date" class="form-control form-control-dark"></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_hasta">Hasta</label><input id="f_hasta" type="date" class="form-control form-control-dark"></div>
+            <div class="col-12 col-sm-6 col-xl-3 d-flex gap-2"><button class="btn btn-primary flex-grow-1" onclick="cargarTodo()"><i class="bi bi-funnel" aria-hidden="true"></i>Aplicar</button><button class="btn btn-outline-secondary" onclick="resetHoy()">Hoy</button></div>
           </div>
         </div>
-
-        <!-- KPIs -->
-        <div class="row g-3 mb-3">
-          <div class="col-12 col-md-3">
-            <div class="card card-dark">
-              <div class="card-body">
-                <div class="text-muted small">Entradas</div>
-                <div class="h3 mb-0 kpi-number" id="k_total">0</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-md-3">
-            <div class="card card-dark">
-              <div class="card-body">
-                <div class="text-muted small">Aprobados</div>
-                <div class="h3 mb-0 kpi-number" id="k_ap">0</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-md-3">
-            <div class="card card-dark">
-              <div class="card-body">
-                <div class="text-muted small">Rechazados</div>
-                <div class="h3 mb-0 kpi-number" id="k_re">0</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-md-3">
-            <div class="card card-dark">
-              <div class="card-body">
-                <div class="text-muted small">% Aprobación</div>
-                <div class="h3 mb-0 kpi-number" id="k_pct">0%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Gráficos -->
-        <div class="row g-3 mb-3 kpi-row">
-          <div class="col-12 col-lg-7">
-            <div class="card card-dark w-100 h-100">
-              <div class="card-header card-header-dark">
-                <div class="h6 mb-0">Registro de Ingresos</div>
-                <div class="text-muted small">Entradas por día</div>
-              </div>
-              <div class="card-body">
-                <canvas id="chartDias" height="120"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12 col-lg-5">
-            <div class="card card-dark w-100 h-100">
-              <div class="card-header card-header-dark">
-                <div class="h6 mb-0">Horas pico</div>
-                <div class="text-muted small">Entradas y salidas aprobadas por hora (día seleccionado)</div>
-              </div>
-              <div class="card-body">
-                <canvas id="chartHoras" height="120"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tabla resumen -->
-        <div class="card card-dark">
-          <div class="card-header card-header-dark">
-            <div class="h6 mb-0">Resumen por día</div>
-            <div class="text-muted small">Total / Aprobados / Rechazados</div>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive" id="tablaResumen"></div>
-          </div>
-        </div>
-
-      </section>
-    </main>
-  </div>
-
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/chartjs/chart.umd.min.js"></script>
-
+      </div>
+      <div class="kpi-grid">
+        <div class="card card-dark kpi-card"><div class="card-body"><i class="bi bi-door-open kpi-icon" aria-hidden="true"></i><div class="kpi-label">Total de entradas</div><div class="kpi-number" id="k_total">0</div></div></div>
+        <div class="card card-dark kpi-card"><div class="card-body"><i class="bi bi-check-circle kpi-icon success" aria-hidden="true"></i><div class="kpi-label">Aprobadas</div><div class="kpi-number" id="k_ap">0</div></div></div>
+        <div class="card card-dark kpi-card"><div class="card-body"><i class="bi bi-x-circle kpi-icon danger" aria-hidden="true"></i><div class="kpi-label">Rechazadas</div><div class="kpi-number" id="k_re">0</div></div></div>
+        <div class="card card-dark kpi-card"><div class="card-body"><i class="bi bi-pie-chart kpi-icon" aria-hidden="true"></i><div class="kpi-label">Tasa de aprobación</div><div class="kpi-number" id="k_pct">0%</div></div></div>
+      </div>
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-7"><div class="card card-dark h-100"><div class="card-header card-header-dark"><h2 class="h6 mb-0">Evolución de ingresos</h2><div class="text-muted small">Entradas aprobadas por día.</div></div><div class="card-body"><div class="chart-frame"><canvas id="chartDias" role="img" aria-label="Gráfico de entradas aprobadas por día">Consulta los valores en la tabla de resumen.</canvas><div id="chartDiasEmpty" class="chart-empty" hidden>Sin registros en este periodo</div></div></div></div></div>
+        <div class="col-12 col-xl-5"><div class="card card-dark h-100"><div class="card-header card-header-dark"><h2 class="h6 mb-0">Actividad por hora</h2><div class="text-muted small">Entradas y salidas aprobadas del último día del periodo.</div></div><div class="card-body"><div class="chart-frame"><canvas id="chartHoras" role="img" aria-label="Gráfico de entradas y salidas aprobadas por hora"></canvas><div id="chartHorasEmpty" class="chart-empty" hidden>Sin movimientos aprobados ese día</div></div></div></div></div>
+      </div>
+      <div class="card card-dark"><div class="card-header card-header-dark"><h2 class="h6 mb-0">Resumen diario</h2><div class="text-muted small">Resultados de las entradas registradas en el periodo.</div></div><div class="card-body"><div class="table-responsive" id="tablaResumen"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div></div></div>
+    </section>
+  </main>
+</div>
+<?php include __DIR__ . '/partials/scripts.php'; ?>
+<script src="/Control-Acceso/assets/vendor/chartjs/chart.umd.min.js"></script>
   <script>
     let chartDias = null;
     let chartHoras = null;
@@ -228,101 +122,76 @@ $activePage = 'reportes';
       }
     }
 
-    function renderDias(items) {
-  let labels = items.map(x => x.fecha);
-  let serie  = items.map(x => Number(x.aprobados || 0));
-
-  // Si hay 1 solo día, agrega "fantasmas" para centrar horizontalmente
-  if (labels.length === 1) {
-    labels = ['', labels[0], ''];
-    serie  = [null, serie[0], null];
-  }
-
-  const ctx = document.getElementById('chartDias');
-  if (chartDias) chartDias.destroy();
-
-  chartDias = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Ingresos aprobados',
-        data: serie,
-        fill: false,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        borderWidth: 2
-      }]
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: '#fff',
-          callback: (val, idx) => labels[idx] || ''   // oculta '' y muestra solo la fecha real
-        },
-        grid: { color: 'rgba(255,255,255,.08)' }
-      },
-      y: {
-        beginAtZero: true,
-        ticks: { color: '#fff' },
-        grid: { color: 'rgba(255,255,255,.08)' }
-      }
+    function chartPalette(){
+      const style = getComputedStyle(document.documentElement);
+      return { text: style.getPropertyValue('--muted').trim(), border: style.getPropertyValue('--border').trim(), panel: style.getPropertyValue('--panel2').trim() };
     }
-  });
-}
 
-    function renderHoras(items){
-      // Normaliza 0..23
-      const arr = Array.from({length:24}, (_,h)=>({hora:h,entradas:0,salidas:0}));
-      for (const r of items){
-        const h = Number(r.hora);
-        if (h>=0 && h<=23) {
-          arr[h].entradas = Number(r.entradas ?? r.total ?? 0);
-          arr[h].salidas = Number(r.salidas || 0);
-        }
-      }
-
-      const labels = arr.map(x => String(x.hora).padStart(2,'0') + ':00');
-      const entradas = arr.map(x => x.entradas);
-      const salidas = arr.map(x => x.salidas);
-
-      const ctx = document.getElementById('chartHoras');
-      if (chartHoras) chartHoras.destroy();
-
-      chartHoras = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Entradas aprobadas',
-              data: entradas,
-              backgroundColor: 'rgba(54, 162, 235, 0.55)',
-              borderColor: 'rgba(54, 162, 235, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Salidas aprobadas',
-              data: salidas,
-              backgroundColor: 'rgba(248, 113, 113, 0.55)',
-              borderColor: 'rgba(248, 113, 113, 1)',
-              borderWidth: 1
-            }
-          ]
+    function chartOptions(){
+      const colors = chartPalette();
+      return {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: colors.text, usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 20, font: { size: 12 } } },
+          tooltip: { backgroundColor: colors.panel, titleColor: '#f0f4fb', bodyColor: '#f0f4fb', borderColor: colors.border, borderWidth: 1, padding: 12 }
         },
-        options: {
-        maintainAspectRatio: false,
-          spanGaps: false,
-          responsive: true,
-          plugins: { legend: { labels: { color: '#fff' } } },
-          scales: {
-            x: { ticks: { color: '#fff', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,.08)' } },
-            y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,.08)' } }
-          }
+        scales: {
+          x: { ticks: { color: colors.text, maxRotation: 0, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
+          y: { beginAtZero: true, ticks: { color: colors.text, precision: 0, font: { size: 11 } }, grid: { color: colors.border }, border: { display: false } }
         }
+      };
+    }
+
+    function renderDias(items){
+      let labels = items.map(x => x.fecha);
+      let serie = items.map(x => Number(x.aprobados || 0));
+      if (labels.length === 1) { labels = ['',labels[0],'']; serie = [null,serie[0],null]; }
+      document.getElementById('chartDiasEmpty').hidden = items.length > 0;
+      if (chartDias) chartDias.destroy();
+      const options = chartOptions();
+      options.plugins.legend.display = false;
+      chartDias = new Chart(document.getElementById('chartDias'), {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Ingresos aprobados', data: serie, borderColor: '#8bbdff', backgroundColor: 'rgba(139,189,255,.09)', pointBackgroundColor: '#8bbdff', fill: true, tension: .3, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2 }] },
+        options
       });
     }
+
+    function renderHoras(items){
+      const hours = Array.from({length:24},(_,hora)=>({hora,entradas:0,salidas:0}));
+      for (const row of items){
+        const hour = Number(row.hora);
+        if (hour>=0 && hour<=23) { hours[hour].entradas = Number(row.entradas ?? row.total ?? 0); hours[hour].salidas = Number(row.salidas || 0); }
+      }
+      document.getElementById('chartHorasEmpty').hidden = items.length > 0;
+      if (chartHoras) chartHoras.destroy();
+      chartHoras = new Chart(document.getElementById('chartHoras'), {
+        type: 'bar',
+        data: {
+          labels: hours.map(row=>String(row.hora).padStart(2,'0')+':00'),
+          datasets: [
+            { label:'Entradas', data:hours.map(row=>row.entradas), backgroundColor:'#8bbdff', borderRadius:3, maxBarThickness:14 },
+            { label:'Salidas', data:hours.map(row=>row.salidas), backgroundColor:'#f3c675', borderRadius:3, maxBarThickness:14 }
+          ]
+        },
+        options: chartOptions()
+      });
+    }
+
+    document.addEventListener('appearancechange', () => {
+      for (const chart of [chartDias,chartHoras]){
+        if (!chart) continue;
+        const colors = chartPalette();
+        chart.options.plugins.legend.labels.color = colors.text;
+        chart.options.plugins.tooltip.backgroundColor = colors.panel;
+        chart.options.plugins.tooltip.borderColor = colors.border;
+        chart.options.scales.x.ticks.color = colors.text;
+        chart.options.scales.y.ticks.color = colors.text;
+        chart.options.scales.y.grid.color = colors.border;
+        chart.update('none');
+      }
+    });
 
     function renderTabla(items){
       let html = `<table class="table table-dark table-hover align-middle mb-0">
@@ -343,6 +212,7 @@ $activePage = 'reportes';
         </tr>`;
       }
 
+      if (items.length === 0) html += "<tr><td colspan=\"5\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No hay entradas registradas en este periodo.</div></td></tr>";
       html += `</tbody></table>`;
       document.getElementById('tablaResumen').innerHTML = html;
     }

@@ -5,7 +5,7 @@ $activePage = 'config';
 $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago')))->format('Y-m-d');
 ?>
 <!doctype html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,14 +24,11 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
   <div class="app">
     <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-    <main class="main">
+    <main class="main" id="mainContent" tabindex="-1">
       <?php include __DIR__ . '/partials/topbar.php'; ?>
 
       <section class="content">
-        <div class="settings-heading">
-          <h1>Configuración</h1>
-          <p class="text-muted mb-0">Administra usuarios, revisa el sistema y descarga tus registros.</p>
-        </div>
+        <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
         <div class="accordion settings-accordion" id="settingsAccordion">
           <div class="accordion-item">
@@ -45,7 +42,7 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
               <div class="accordion-body">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                   <span class="text-muted small">Usuarios y permisos del sistema</span>
-                  <button id="btnUsersRefresh" type="button" class="btn btn-sm btn-outline-light" onclick="loadUsers()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar usuarios</button>
+                  <button id="btnUsersRefresh" type="button" class="btn btn-sm btn-outline-light" onclick="loadUsers()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar usuarios</button>
                 </div>
                 <div class="panel mb-3">
                   <div class="row g-3">
@@ -60,10 +57,10 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
                     <div class="col-12 col-md-6 col-lg-3">
                       <label class="form-label" for="nu_rol">Rol</label>
                       <select id="nu_rol" class="form-select form-control-dark">
-                        <option value="GUARDIA">GUARDIA</option>
-                        <option value="CONTROL_VISITA">CONTROL_VISITA</option>
-                        <option value="AUDITOR">AUDITOR</option>
-                        <option value="ADMIN">ADMIN</option>
+                        <option value="GUARDIA">Guardia</option>
+                        <option value="CONTROL_VISITA">Control de visitas</option>
+                        <option value="AUDITOR">Auditor</option>
+                        <option value="ADMIN">Administrador</option>
                       </select>
                     </div>
                     <div class="col-12 col-md-6 col-lg-3">
@@ -175,9 +172,11 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
     </main>
   </div>
 
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <?php include __DIR__ . '/partials/scripts.php'; ?>
 
   <script>
+    const roleLabels = {"GUARDIA":"Guardia","CONTROL_VISITA":"Control de visitas","AUDITOR":"Auditor","ADMIN":"Administrador"};
+
     function escapeHtml(s){
       return String(s ?? '')
         .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -220,7 +219,7 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
         <table class="table table-dark table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th>ID</th><th>Username</th><th>Rol</th><th>Activo</th><th>Acciones</th>
+              <th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th><th>Acciones</th>
             </tr>
           </thead><tbody>`;
 
@@ -231,30 +230,31 @@ $exportToday = (new DateTimeImmutable('now', new DateTimeZone('America/Santiago'
           <td>${u.id}</td>
           <td class="mono">${escapeHtml(u.username)}</td>
           <td>
-            <select class="form-select form-control-dark" onchange="updateRole(${u.id}, this.value)">
+            <select class="form-select form-control-dark" aria-label="Rol de ${escapeHtml(u.username)}" onchange="updateRole(${u.id}, this.value)">
               ${['GUARDIA','CONTROL_VISITA','AUDITOR','ADMIN'].map(r => 
-                `<option value="${r}" ${u.rol===r?'selected':''}>${r}</option>`
+                `<option value="${r}" ${u.rol===r?'selected':''}>${roleLabels[r]}</option>`
               ).join('')}
             </select>
           </td>
           <td>
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" ${isActive?'checked':''}
-                onchange="updateActive(${u.id}, this.checked)">
+                aria-label="Cuenta activa de ${escapeHtml(u.username)}" onchange="updateActive(${u.id}, this.checked)">
             </div>
           </td>
-          <td class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-light" onclick="resetPassPrompt(${u.id}, '${escapeHtml(u.username)}')">
-              <i class="bi bi-key me-1"></i>Reset pass
+          <td><div class="table-actions">
+            <button class="btn btn-sm btn-outline-light" onclick="resetPassPrompt(${u.id}, this.dataset.username)" data-username="${escapeHtml(u.username)}">
+              <i class="bi bi-key me-1"></i>Restablecer
             </button>
 
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, this.dataset.username)" data-username="${escapeHtml(u.username)}">
               <i class="bi bi-trash me-1"></i>Eliminar
-            </button> 
+            </button></div>
           </td>
         </tr>`;
       }
 
+      if (rows.length === 0) html += "<tr><td colspan=\"5\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No se encontraron usuarios.</div></td></tr>";
       html += `</tbody></table></div>`;
       document.getElementById('usersTable').innerHTML = html;
     }

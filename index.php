@@ -1,143 +1,82 @@
-<?php $activePage = 'validacion'; ?>
 <?php
 require_once __DIR__ . '/app/auth.php';
-require_login();
-require_roles(['ADMIN','GUARDIA']);   
+require_roles(['ADMIN','GUARDIA']);
 require_once __DIR__ . '/app/puestos.php';
 $activePage = 'validacion';
 ?>
-
 <!doctype html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Control de Acceso</title>
-  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validación | Control de Acceso</title>
   <link href="/Control-Acceso/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/Control-Acceso/assets/vendor/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
-
-  <?php $THEME_VER = @filemtime($_SERVER['DOCUMENT_ROOT'].'/Control-Acceso/assets/css/theme.css') ?: time(); ?>
-  <link href="/Control-Acceso/assets/css/theme.css?v=<?= $THEME_VER ?>" rel="stylesheet">
+  <link href="/Control-Acceso/assets/css/theme.css?v=<?= filemtime(__DIR__.'/assets/css/theme.css') ?>" rel="stylesheet">
 </head>
-
 <body>
-  <div class="app">
-    <!-- SIDEBAR -->
-    <?php include __DIR__ . '/partials/sidebar.php'; ?>
+<div class="app">
+  <?php include __DIR__ . '/partials/sidebar.php'; ?>
+  <main class="main" id="mainContent" tabindex="-1">
+    <?php include __DIR__ . '/partials/topbar.php'; ?>
+    <section class="content">
+      <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
-    <!-- MAIN -->
-    <main class="main">
-      <!-- TOPBAR -->
-      <?php include __DIR__ . '/partials/topbar.php'; ?>
-
-      <!-- CONTENT -->
-      <section class="content">
-        <div class="row g-3">
-          <!-- CARD: Validar -->
-          <div class="col-12">
-            <div class="card card-dark">
-              <div class="card-header card-header-dark">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div>
-                    <div class="h6 mb-0">VALIDACIÓN DE ACCESO</div>
-                    <div class="text-muted small">RUT y estado funcionario</div>
-                  </div>
-
-                  <div class="btn-group btn-group-sm" role="group" aria-label="Modo de ingreso">
-                    <button type="button" id="btnModoPeatonal" class="btn btn-outline-light active" onclick="setModo('PEATONAL')">
-                      <i class="bi bi-person-walking me-1"></i>Peatonal
-                    </button>
-                    <button type="button" id="btnModoVehiculo" class="btn btn-outline-light" onclick="setModo('VEHICULO')">
-                      <i class="bi bi-car-front me-1"></i>Vehícular
-                    </button>
-                  </div>
-                </div>
+      <div class="validation-layout">
+        <div class="card card-dark validation-form">
+          <div class="card-header card-header-dark">
+            <div class="card-section-title"><i class="bi bi-person-vcard" aria-hidden="true"></i><h2 class="h6 mb-0">Validar funcionario</h2></div>
+            <div class="text-muted small">Ingresa el RUT y selecciona el movimiento.</div>
+          </div>
+          <div class="card-body">
+            <div class="validation-fields">
+              <div><label class="form-label" for="rut">RUT del funcionario</label><input class="form-control form-control-dark mono" id="rut" placeholder="12345678-5" autocomplete="off" spellcheck="false" aria-describedby="rutHint"><div class="input-hint" id="rutHint">Ingresa el RUT con su dígito verificador.</div></div>
+              <div>
+                <label class="form-label" for="puesto">Puesto</label>
+                <select class="form-select form-control-dark" id="puesto">
+                  <?php foreach (PUESTOS_ACCESO as $puestoAcceso): ?>
+                    <option value="<?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?></option>
+                  <?php endforeach; ?>
+                </select>
               </div>
-
-              <div class="card-body">
-                <div class="row g-2">
-                  <div class="col-12">
-                    <label class="form-label">RUT</label>
-                    <input class="form-control form-control-dark" id="rut" placeholder="12345678-5" />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label" for="puesto">Puesto</label>
-                    <select class="form-select form-control-dark" id="puesto">
-                      <?php foreach (PUESTOS_ACCESO as $puestoAcceso): ?>
-                        <option value="<?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($puestoAcceso, ENT_QUOTES, 'UTF-8') ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
+              <div>
+                <div id="accessModeLabel" class="form-label">Modo de acceso</div>
+                <div class="btn-group segmented-control w-100" role="group" aria-labelledby="accessModeLabel">
+                  <button type="button" id="btnModoPeatonal" class="btn btn-outline-light active" aria-pressed="true" onclick="setModo('PEATONAL')"><i class="bi bi-person-walking" aria-hidden="true"></i>Peatonal</button>
+                  <button type="button" id="btnModoVehiculo" class="btn btn-outline-light" aria-pressed="false" onclick="setModo('VEHICULO')"><i class="bi bi-car-front" aria-hidden="true"></i>Vehicular</button>
                 </div>
-
-                <div class="d-flex gap-2 flex-wrap mt-3">
-                  <button id="btnConsultar" class="btn btn-outline-light" onclick="soloConsultar()">
-                    <i class="bi bi-search me-1"></i>Consultar
-                  </button>
-                  <button id="btnEntrada" class="btn btn-success" onclick="registrar('ENTRADA')">
-                    <i class="bi-box-arrow-in-right"></i>Entrada
-                  </button>
-                  <button id="btnSalida" class="btn btn-warning" onclick="registrar('SALIDA')">
-                    <i class="bi bi-box-arrow-right me-1"></i>Salida
-                  </button>
-                  <button class="btn btn-outline-secondary" onclick="limpiar()">
-                    <i class="bi bi-eraser me-1"></i>Limpiar
-                  </button>
-
-                  </button>
-                </div>
-
-                <div class="mt-3" id="resultado"></div>
               </div>
             </div>
-          </div>
-                    <!-- CARD: Personal dentro -->
-          <div class="col-12">
-            <div class="card card-dark">
-              <div class="card-header card-header-dark">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div>
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="h6 mb-0">Personal dentro</div>
-                      <span class="badge badge-soft" id="cntDentro">0</span>
-                    </div>
-                    <div class="text-muted small">Últimas 24 Hrs</div>
-                  </div>
-                  <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
-                  </button>
-                </div>
-              </div>
-
-              <div class="card-body">
-                <div class="row g-2 align-items-end">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label">Fecha</label>
-                    <div class="form-control form-control-dark d-flex align-items-center" style="pointer-events:none;">
-                      <i class="bi bi-calendar3 me-2"></i>
-                      <span id="d_fecha_text">Hoy</span>
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label">RUT (opcional)</label>
-                    <input id="d_rut" class="form-control form-control-dark" placeholder="12345678-5">
-                  </div>
-                </div>
-
-                <div class="mt-3 table-wrap" id="tablaDentro"></div>
-              </div>
+            <div class="access-actions">
+              <button id="btnEntrada" class="btn btn-success" onclick="registrar('ENTRADA')"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>Registrar entrada</button>
+              <button id="btnSalida" class="btn btn-warning" onclick="registrar('SALIDA')"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Registrar salida</button>
+              <button id="btnConsultar" class="btn btn-outline-light" onclick="soloConsultar()"><i class="bi bi-search" aria-hidden="true"></i>Solo consultar</button>
+              <button class="btn btn-outline-secondary" onclick="limpiar()"><i class="bi bi-eraser" aria-hidden="true"></i>Limpiar</button>
             </div>
+            <div class="input-hint mt-3"><kbd>Enter</kbd> en RUT registra una entrada.</div>
+            <div class="mt-3" id="resultado" role="status" aria-live="polite" aria-atomic="true"></div>
           </div>
-          <!-- CARD: Filtros + tabla -->
         </div>
-      </section>
-    </main>
-  </div>
-
-  <script src="assets/js/ui.js"></script>
-
+        <div class="card card-dark">
+          <div class="card-header card-header-dark">
+            <div class="d-flex align-items-center justify-content-between">
+              <div><div class="d-flex align-items-center gap-2"><h2 class="h6 mb-0">Personal dentro</h2><span class="badge badge-soft" id="cntDentro">0</span></div><div class="text-muted small">Consulta el personal con ingreso registrado.</div></div>
+              <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-6"><div class="form-label" id="insideDateLabel">Fecha de consulta</div><div class="form-control form-control-dark d-flex align-items-center" aria-labelledby="insideDateLabel"><i class="bi bi-calendar3 me-2" aria-hidden="true"></i><span id="d_fecha_text">Hoy</span></div></div>
+              <div class="col-12 col-md-6"><label class="form-label" for="d_rut">Filtrar por RUT <span class="text-muted fw-normal">(opcional)</span></label><input id="d_rut" class="form-control form-control-dark" placeholder="12345678-5" autocomplete="off"></div>
+            </div>
+            <div class="mt-4 table-wrap" id="tablaDentro"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<?php include __DIR__ . '/partials/scripts.php'; ?>
   <script>
   async function postJSON(url, payload) {
     const res = await fetch(url, {
@@ -203,6 +142,8 @@ $activePage = 'validacion';
 
 function setModo(modo){
   modoIngreso = modo;
+  document.getElementById("btnModoPeatonal").setAttribute("aria-pressed", String(modo === "PEATONAL"));
+  document.getElementById("btnModoVehiculo").setAttribute("aria-pressed", String(modo === "VEHICULO"));
 
   const b1 = document.getElementById('btnModoPeatonal');
   const b2 = document.getElementById('btnModoVehiculo');
@@ -292,12 +233,13 @@ function setModo(modo){
               <div class="func-value">${escapeHtml(puestoValue())}</div>
             </div>
           </div>
+        </div>
       `);
 
 
     } catch (err) {
       console.error(err);
-      setResultado(`<div class="alert alert-danger mb-0">Error al consultar (ver consola F12).</div>`);
+      setResultado(`<div class="alert alert-danger mb-0">No se pudo consultar el RUT. Inténtalo nuevamente.</div>`);
     } finally {
       setButtonLoading('btnConsultar', false);
       setButtonsDisabled(['btnEntrada', 'btnSalida'], false);
@@ -384,7 +326,7 @@ function setModo(modo){
       autoClearResultado();
     } catch (err) {
       console.error(err);
-      setResultado(`<div class="alert alert-danger mb-0">Error al registrar (ver consola F12).</div>`);
+      setResultado(`<div class="alert alert-danger mb-0">No se pudo registrar el movimiento. Inténtalo nuevamente.</div>`);
     } finally {
       setButtonLoading(btnId, false);
       setButtonsDisabled(['btnConsultar', tipo === 'ENTRADA' ? 'btnSalida' : 'btnEntrada'], false);
@@ -537,7 +479,8 @@ function setModo(modo){
       </tr>`;
     }
 
-    html += `</tbody></table></div>`;
+    if (rows.length === 0) html += "<tr><td colspan=\"7\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No se encontró personal para esta consulta.</div></td></tr>";
+      html += `</tbody></table></div>`;
     document.getElementById('tablaDentro').innerHTML = html;
   }
 
@@ -548,8 +491,6 @@ function setModo(modo){
   }
 
   </script>
-    <script src="/Control-Acceso/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/Control-Acceso/assets/js/ui.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,3 @@
-.settings-heading { margin-bottom: 20px; }
-.settings-heading h1 { font-size: 1.5rem; margin-bottom: 6px; }
 .settings-accordion {
   --bs-accordion-color: var(--text);
   --bs-accordion-bg: var(--panel);
@@ -12,28 +10,28 @@
 }
 .settings-accordion .accordion-item {
   border: 1px solid var(--border);
-  border-radius: 16px;
-  margin-bottom: 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
   overflow: hidden;
   box-shadow: var(--shadow);
 }
-.settings-accordion .accordion-button { gap: 14px; padding: 18px 20px; }
+.settings-accordion .accordion-button { gap: 14px; padding: 20px 24px; }
 .settings-accordion .accordion-button::after { filter: brightness(0) invert(1); }
 .settings-section-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 1.25rem;
 }
-.settings-section-title { display: block; font-weight: 700; font-size: 1rem; }
-.settings-section-description { display: block; font-size: .85rem; color: var(--muted); margin-top: 4px; }
-.settings-accordion .accordion-body { padding: 20px; }
+.settings-section-title { display: block; font-weight: 650; font-size: 15px; }
+.settings-section-description { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.settings-accordion .accordion-body { padding: 24px; }
 .settings-export-note { min-height: 1.5em; }
 .settings-accordion .status-dot.off { background: var(--muted2); box-shadow: 0 0 0 6px rgba(148,163,184,.12); }
 @media (max-width: 575px) {
