@@ -127,6 +127,40 @@ en MariaDB, el rechazo de otros valores y el pórtico fijo de visitas. Requiere 
 respaldo SQL de pruebas con restauración comprobada y el servidor iniciado; los
 datos temporales se retiran al terminar.
 
+## Configuración y exportaciones
+
+Configuración organiza sus opciones en tres secciones desplegables: **Gestión de
+usuarios**, **Sistema / diagnóstico** y **Exportaciones**. La comprobación de la
+base de datos se actualiza al abrir diagnóstico y también puede repetirse con
+**Probar conexión**.
+
+Para descargar registros, abre **Exportaciones**, elige **Registros de acceso** o
+**Registros de visitas**, selecciona **Un día** y la fecha, y pulsa **Descargar CSV**.
+También puedes elegir **Todos los registros**. Funcionarios y usuarios se exportan
+como listados completos; el archivo de usuarios no contiene contraseñas ni sus
+hashes. Estas descargas requieren una sesión de administrador.
+
+En visitas puedes filtrar por **Solo ingresos del día**, **Solo salidas del día** o
+**Ingresos o salidas del día**. Esta última opción incluye una visita una sola vez
+si ingresó o salió en la fecha elegida, aunque la otra actividad ocurriera otro día.
+Una visita que permaneció dentro todo el día sin ingresar ni salir ese día no se
+incluye con ese criterio. Accesos usa la fecha de cada movimiento.
+
+Los archivos incluyen encabezados aunque el filtro no encuentre registros, usan
+UTF-8 para conservar tildes en Excel y llevan la fecha en su nombre cuando se
+filtran por día. Los CSV incorporan el nombre del operador registrado; en visitas
+corresponde al operador de ingreso. Los registros antiguos sin operador dejan esa
+celda vacía.
+
+Los textos que pueden interpretarse como fórmulas al abrir el CSV se prefijan con
+un tabulador, incluidos teléfonos que empiezan con `+`. Esto permite tratarlos como
+texto en Excel; si procesas el archivo con otro programa, considera ese prefijo.
+
+`C:\xampp\php\php.exe tests\exportaciones.php` verifica filtros diarios y completos,
+límites de medianoche, visitas entre días, permisos y contenido de los CSV. Requiere
+el servidor de pruebas y un respaldo SQL con restauración comprobada. Retira sus
+datos temporales y verifica el contenido de las cuatro tablas al terminar.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.
