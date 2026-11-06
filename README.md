@@ -67,6 +67,17 @@ estable.
 No subas a GitHub los respaldos, exportaciones con datos personales ni archivos de
 configuración local. Este repositorio contiene el código y la documentación.
 
+## Rechazos de RUT
+
+Los RUT inválidos o no registrados muestran `RECHAZADO` y el motivo, sin producir un
+error interno. La respuesta indica `guardado: false`: estos intentos no se agregan
+al historial de movimientos, que exige un funcionario existente. Los movimientos
+de funcionarios existentes conservan sus reglas y su registro habitual.
+
+Para comprobar este comportamiento con el servidor de pruebas iniciado, ejecuta
+`C:\xampp\php\php.exe tests\rut_rechazos.php` desde la carpeta de pruebas. La prueba
+comprueba entradas y salidas para ADMIN y GUARDIA, sin agregar movimientos a la base.
+
 ## Requisitos actuales
 
 - PHP 8.2 y la extensión PDO MySQL.

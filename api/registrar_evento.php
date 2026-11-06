@@ -18,9 +18,27 @@ function input_data(): array {
   return $_POST;
 }
 
+function rechazar_rut_sin_registro(string $rut, string $tipo, string $modo, string $puesto, string $motivo): void {
+  echo json_encode([
+    'ok' => true,
+    'resultado' => 'RECHAZADO',
+    'guardado' => false,
+    'motivo' => $motivo,
+    'rut' => $rut,
+    'tipo' => $tipo,
+    'modo' => $modo,
+    'puesto' => $puesto,
+    'funcionario' => null,
+  ], JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 try {
   $data = input_data();
-  $rut = rut_normalizar($data['rut'] ?? '');
+  $rutIngresado = $data['rut'] ?? '';
+  $rut = is_string($rutIngresado) && preg_match('//u', $rutIngresado) === 1
+    ? rut_normalizar($rutIngresado)
+    : '';
   $tipo = strtoupper(trim($data['tipo'] ?? ''));
   $puesto = trim($data['puesto'] ?? 'Portón 1');
   $modo = strtoupper(trim($data['modo'] ?? 'PEATONAL'));
@@ -30,36 +48,26 @@ try {
     exit;
   }
 
-  $pdo = db();
-
   // 1) Validación RUT
   if (!rut_es_valido($rut)) {
-    // registra rechazado
-    $motivo = 'RUT inválido (DV o formato)';
-    $st = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, resultado, motivo)
-                         VALUES (?, ?, ?, NOW(), ?, 'RECHAZADO', ?)");
-    $st->execute([$rut, $tipo, $modo, $puesto, $motivo]);
-
-    echo json_encode([
-      'ok' => true,
-      'resultado' => 'RECHAZADO',
-      'motivo' => $motivo,
-      'rut' => $rut
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    // El historial de movimientos exige un funcionario existente.
+    rechazar_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT inválido (DV o formato)');
   }
 
   // 2) Consulta funcionario
+  $pdo = db();
   $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
   $st->execute([$rut]);
   $f = $st->fetch();
 
+  if (!$f) {
+    rechazar_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT no registrado en la institución');
+  }
+
   $resultado = 'RECHAZADO';
   $motivo = null;
 
-  if (!$f) {
-    $motivo = 'RUT no registrado en la institución';
-  } else if ($f['estado'] !== 'ACTIVO') {
+  if ($f['estado'] !== 'ACTIVO') {
     $motivo = 'Funcionario INACTIVO';
   } else {
     $resultado = 'APROBADO';
