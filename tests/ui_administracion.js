@@ -1,5 +1,6 @@
 async function comprobarAdministracion(sources,runtime) {
   let checks=0;
+  const tablesFor=document=>{const window={};new Function('window','document',sources.tables)(window,document);return window.Tablas;};
   const check=(condition,message)=>{if(!condition)throw new Error(message);checks++;};
   const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
   function dom() {
@@ -42,9 +43,9 @@ async function comprobarAdministracion(sources,runtime) {
       return{ok:true,json:async()=>({ok:true,items:rows,total:rows.length,page:1,pages:1,dentro:rows.length,checked_at:'2026-11-07 23:00:00'})};
     };
     element('f_fecha').value='2026-11-07';
-    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida};')(
+    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile','Tablas',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida};')(
       window,document,fetch,runtime.URLSearchParams,runtime.AbortController,(fn,delay)=>{timers.set(++timerId,{fn,delay});return timerId;},id=>timers.delete(id),
-      {confirmar:async(title,text)=>{confirmations.push(text);return true;}},{hoy:()=>'2026-11-07'});
+      {confirmar:async(title,text)=>{confirmations.push(text);return true;}},{hoy:()=>'2026-11-07'},tablesFor(document));
     await api.view('dentro');
     check(!calls.at(-1).url.includes('fecha=') && element('f_fecha').disabled,'Dentro ahora filtra por el día.');
     check(element('tabla').innerHTML.includes('2001-02-03') && element('tabla').innerHTML.includes('&lt;img&gt;') && !element('tabla').innerHTML.includes('<img>'),'Fecha antigua o escape HTML incorrecto.');
@@ -70,8 +71,10 @@ async function comprobarAdministracion(sources,runtime) {
       if(payload?.accion==='guardar')data={ok:true};
       return{ok:true,json:async()=>data};
     };
-    new Function('document','fetch','URLSearchParams','Dialogos','TextDecoder',sources.staff)(document,fetch,runtime.URLSearchParams,{confirmar:async(title,text)=>{confirmations.push(text);return true;}},runtime.TextDecoder);
+    new Function('document','fetch','URLSearchParams','Dialogos','TextDecoder','Tablas',sources.staff)(document,fetch,runtime.URLSearchParams,{confirmar:async(title,text)=>{confirmations.push(text);return true;}},runtime.TextDecoder,tablesFor(document));
     document.events.DOMContentLoaded();await flush();
+    element('staffLimit').value='50';await element('staffLimit').events.change();
+    check(calls.at(-1).url.includes('limit=50'),'Funcionarios no aplica filas por página.');
     check(element('staffTable').innerHTML.includes('&lt;script&gt;') && !element('staffTable').innerHTML.includes('<script>'),'Los nombres de funcionarios no se escapan.');
     element('staffTable').events.click({target:{closest:()=>({dataset:{edit:row.rut}})}});
     check(element('sf_rut').readOnly && element('sf_nombres').value===row.nombres,'Editar permite cambiar el RUT.');
@@ -115,7 +118,7 @@ if(typeof module!=='undefined' && module.exports) {
   module.exports=comprobarAdministracion;
   if(require.main===module) {
     const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'..');
-    const files={session:'assets/js/sesion.js',visits:'assets/js/visitas.js',staff:'assets/js/funcionarios.js',dialogs:'assets/js/dialogos.js',users:'assets/js/config-gestion.js'};
+    const files={session:'assets/js/sesion.js',visits:'assets/js/visitas.js',staff:'assets/js/funcionarios.js',dialogs:'assets/js/dialogos.js',users:'assets/js/config-gestion.js',tables:'assets/js/tablas.js'};
     const sources=Object.fromEntries(Object.entries(files).map(([key,file])=>[key,fs.readFileSync(path.join(root,file),'utf8')]));
     comprobarAdministracion(sources,{URL,Headers,URLSearchParams,AbortController,TextDecoder}).then(result=>console.log('OK:',result.checks,'comprobaciones de administración')).catch(error=>{console.error(error.message);process.exitCode=1;});
   }

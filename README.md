@@ -354,3 +354,30 @@ siguiente operación o Limpiar. Las entradas usan verde, las salidas ámbar y lo
 rechazos rojo. Los cambios de permisos se confirman dentro de la aplicación y
 los errores aparecen en pantalla. Pruebas: `tests/operacion_visual.php` y
 `node tests/ui_operacion.js` con Node.js disponible.
+### Tablas y búsquedas
+
+Registros, Personal dentro, Visitas, Usuarios y Funcionarios permiten elegir
+25, 50 o 100 filas, muestran el rango y total y permiten ir a una página.
+Los encabezados permanecen visibles al desplazar la tabla.
+
+- Registros busca por nombre o RUT, con o sin puntos; filtra por rango de fechas,
+  resultado y puesto de entrada o salida, incluidos puestos históricos. La pareja
+  se conserva completa al filtrar y paginar. Limpiar consulta todo el historial.
+- Personal dentro busca por nombre, RUT o unidad y filtra por puesto de ingreso.
+  El contador corresponde al total dentro, aunque la tabla esté filtrada.
+- Visitas busca por nombre, RUT o patente. Dentro ahora conserva todos los
+  ingresos pendientes; Historial mantiene su filtro por fecha de ingreso.
+- Usuarios permite buscar el nombre de cuenta y filtrar rol y estado.
+- Funcionarios conserva búsqueda y filtros y añade selección de filas y página.
+
+Las búsquedas tratan % y _ como texto. Las páginas se ordenan por claves estables;
+el total y las filas se leen en la misma transacción. Si falla una consulta se
+advierte que la lista no está actualizada; Personal dentro muestra — en el
+contador hasta verificarlo otra vez. Las consultas nuevas reemplazan las
+anteriores y el refresco automático conserva la página.
+
+Pruebas: `tests/tablas_busquedas.php`, `node tests/ui_tablas.js` y
+`node tests/ui_operacion.js`. Se verificaron 61 parejas, 122 movimientos y
+81 visitas temporales, incluidos empates de fecha, filtros por puesto de salida,
+búsquedas vacías y recuperación de páginas fuera del rango. Las pruebas de
+interfaz usan elementos simulados; revisa la apariencia en el navegador.

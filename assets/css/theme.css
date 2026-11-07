@@ -291,3 +291,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .event-badge.exit { color: var(--warn); background: #3a3020; border: 1px solid #80673e; }
 dialog::backdrop { background: rgba(4,10,20,.72); }
 #fichaFuncionario:empty, #consultaMensaje:empty { display: none; }
+/* Tablas legibles y controles de consulta compartidos. */
+.table-responsive { max-height: min(65vh,640px); overflow: auto; }
+.table thead th { position: sticky; top: 0; z-index: 1; }
+.table td { overflow-wrap: anywhere; }
+.table .date-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.table-toolbar, .table-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.table-pagination { justify-content: flex-start; }
+.rows-label { display: flex; align-items: center; gap: 8px; }
+.rows-label select { width: 85px; }
+.page-number { width: 88px; }

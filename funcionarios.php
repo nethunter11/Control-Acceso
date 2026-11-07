@@ -64,9 +64,9 @@ $activePage='funcionarios';
       <div class="col-12 col-md-3"><label class="form-label" for="staffStateFilter">Estado</label><select id="staffStateFilter" class="form-select form-control-dark"><option value="">Todos</option><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
       <div class="col-12 col-md-2"><button type="submit" class="btn btn-primary w-100">Buscar</button></div>
     </form>
-    <p class="small text-muted mt-3" id="staffListSummary" role="status">Consultando funcionarios…</p>
-    <div id="staffTable" class="table-wrap"></div>
-    <div class="d-flex gap-2 mt-3"><button id="staffPrev" type="button" class="btn btn-outline-light" disabled>Anterior</button><button id="staffNext" type="button" class="btn btn-outline-light" disabled>Siguiente</button></div>
+    <div class="table-toolbar mt-3"><p class="small text-muted mb-0" id="staffListSummary" role="status" aria-live="polite">Consultando funcionarios…</p><label class="small rows-label" for="staffLimit">Filas por página<select id="staffLimit" class="form-select form-control-dark"><option>25</option><option>50</option><option>100</option></select></label></div>
+    <div id="staffTable" class="table-wrap mt-3"></div>
+    <div class="table-pagination mt-3"><button id="staffPrev" type="button" class="btn btn-outline-light" disabled>Anterior</button><label for="staffPage" class="small">Página</label><input id="staffPage" class="form-control form-control-dark page-number" type="number" min="1" value="1" disabled><button id="staffNext" type="button" class="btn btn-outline-light" disabled>Siguiente</button></div>
   </div>
 </section>
 </section></main></div>

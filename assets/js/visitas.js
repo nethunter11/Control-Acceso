@@ -68,9 +68,9 @@ async function cargarVisitas(page=1) {
   if(visitsController) visitsController.abort();
   const controller=new AbortController(); visitsController=controller;
   const timeout=setTimeout(()=>controller.abort(),10000);
-  const params=new URLSearchParams({vista:visitsView,page:String(page),limit:'25'});
+  const params=new URLSearchParams({vista:visitsView,page:String(page),limit:document.getElementById('visitsLimit').value});
   const rut=document.getElementById('f_rut').value.trim();
-  if(rut) params.set('rut',rut);
+  if(rut) params.set('q',rut);
   if(visitsView==='historial') {
     const date=document.getElementById('f_fecha').value;
     const state=document.getElementById('f_estado').value;
@@ -91,9 +91,8 @@ async function cargarVisitas(page=1) {
     }
     if(!data.items.length) html+='<tr><td colspan="10"><div class="table-empty">No hay visitas para esta consulta.</div></td></tr>';
     document.getElementById('tabla').innerHTML=html+'</tbody></table></div>';
-    document.getElementById('visitSummary').textContent='Actualizado: '+data.checked_at+' · Dentro ahora: '+data.dentro+' · '+data.total+' visitas encontradas · Página '+data.page+' de '+data.pages;
-    document.getElementById('visitsPrev').disabled=data.page<=1;
-    document.getElementById('visitsNext').disabled=data.page>=data.pages;
+    document.getElementById('visitSummary').textContent='Actualizado: '+data.checked_at+' · Dentro ahora: '+data.dentro+' · '+Tablas.resumen(data);
+    Tablas.estado('visits',data);
   } catch(error) {
     if(visitsController===controller) document.getElementById('visitSummary').textContent='La lista no está actualizada. '+(error.name==='AbortError'?'Consulta interrumpida o sin respuesta.':error.message);
   } finally {
@@ -118,6 +117,10 @@ function limpiarFiltros() {
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('f_fecha').value=FechasChile.hoy();
+  document.getElementById('visitsLimit').addEventListener('change',()=>cargarVisitas(1));
+  document.getElementById('visitsPage').addEventListener('change',()=>cargarVisitas(Tablas.numero('visits')));
+  document.getElementById('visitsPage').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();cargarVisitas(Tablas.numero('visits'));}});
+  document.getElementById('f_rut').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();cargarVisitas(1);}});
   document.getElementById('tabla').addEventListener('click',event=>{ const button=event.target.closest('[data-exit]'); if(button) marcarSalida(Number(button.dataset.exit)); });
   cambiarVistaVisitas('dentro');
 });

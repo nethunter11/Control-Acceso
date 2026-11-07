@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/../app/auth.php';
 require_once __DIR__.'/../app/funcionarios.php';
+require_once __DIR__.'/../app/tablas.php';
 require_api_roles(['ADMIN'],['GET','POST']);
 try {
   $pdo=db();
@@ -15,15 +16,17 @@ try {
     $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     if($page===false) throw new InvalidArgumentException('Página inválida.');
     $where=[]; $params=[];
-    if($q!=='') { $where[]='(rut LIKE ? OR nombres LIKE ? OR unidad LIKE ?)'; $rutSearch=preg_replace('/[. ]/','',$q); if(rut_es_valido(rut_normalizar($q))) $rutSearch=rut_normalizar($q); $params=['%'.$rutSearch.'%','%'.$q.'%','%'.$q.'%']; }
+    if($q!=='') { $where[]="(rut LIKE ? ESCAPE '!' OR nombres LIKE ? ESCAPE '!' OR unidad LIKE ? ESCAPE '!')"; $params=[tabla_like(tabla_rut_busqueda($q)),tabla_like($q),tabla_like($q)]; }
     if($state!=='') { $where[]='estado=?'; $params[]=$state; }
     $clause=$where?' WHERE '.implode(' AND ',$where):'';
+    $pdo->beginTransaction();
     $query=$pdo->prepare('SELECT COUNT(*) FROM funcionarios'.$clause); $query->execute($params); $total=(int)$query->fetchColumn();
-    $pages=max(1,(int)ceil($total/25)); $page=min($page,$pages);
-    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT 25 OFFSET '.(($page-1)*25));
+    $pagination=tabla_pagina($_GET,$total);$page=$pagination['page'];
+    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
     $query->execute($params); $rows=$query->fetchAll();
     foreach($rows as &$row) $row['revision']=funcionario_revision($row); unset($row);
-    echo json_encode(['ok'=>true,'items'=>$rows,'total'=>$total,'page'=>$page,'pages'=>$pages],JSON_UNESCAPED_UNICODE); exit;
+    $pdo->commit();
+    echo json_encode(['ok'=>true,'items'=>$rows]+$pagination,JSON_UNESCAPED_UNICODE); exit;
   }
   if((int)($_SERVER['CONTENT_LENGTH'] ?? 0)>2097152) throw new InvalidArgumentException('El archivo es demasiado grande.');
   $data=json_decode(file_get_contents('php://input'),true,512,JSON_THROW_ON_ERROR);
@@ -56,10 +59,12 @@ try {
 } catch(FuncionarioConflicto $error) {
   http_response_code(409); echo json_encode(['ok'=>false,'error'=>$error->getMessage()],JSON_UNESCAPED_UNICODE);
 } catch(InvalidArgumentException|JsonException $error) {
+  if(isset($pdo)&&$pdo->inTransaction())$pdo->rollBack();
   http_response_code(422); echo json_encode(['ok'=>false,'error'=>$error instanceof JsonException?'Solicitud JSON inválida.':$error->getMessage()],JSON_UNESCAPED_UNICODE);
 } catch(BloqueoRutOcupado $error) {
   http_response_code(409); echo json_encode(['ok'=>false,'error'=>'Otra edición está en curso. Reintenta.'],JSON_UNESCAPED_UNICODE);
 } catch(Throwable $error) {
+  if(isset($pdo)&&$pdo->inTransaction())$pdo->rollBack();
   error_log('Funcionarios: '.$error->getMessage());
   http_response_code(500); echo json_encode(['ok'=>false,'error'=>'No se pudieron guardar o consultar los funcionarios.'],JSON_UNESCAPED_UNICODE);
 }

@@ -60,16 +60,16 @@ $activePage = 'validacion';
         <div class="card card-dark">
           <div class="card-header card-header-dark">
             <div class="d-flex align-items-center justify-content-between">
-              <div><div class="d-flex align-items-center gap-2"><h2 class="h6 mb-0">Personal dentro</h2><span class="badge badge-soft" id="cntDentro">0</span></div><div class="text-muted small">Incluye ingresos de días anteriores que aún no tienen salida.</div></div>
+              <div><div class="d-flex align-items-center gap-2"><h2 class="h6 mb-0">Personal dentro</h2><span class="badge badge-soft" id="cntDentro">—</span></div><div class="text-muted small">Incluye ingresos de días anteriores que aún no tienen salida.</div></div>
               <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button>
             </div>
           </div>
           <div class="card-body">
             <div class="row g-3 align-items-end">
-              <div class="col-12 col-md-6"><div class="form-label" id="insideDateLabel">Última actualización</div><div class="form-control form-control-dark d-flex align-items-center" aria-labelledby="insideDateLabel"><i class="bi bi-calendar3 me-2" aria-hidden="true"></i><span id="d_fecha_text">Consultando…</span></div></div>
-              <div class="col-12 col-md-6"><label class="form-label" for="d_rut">Filtrar por RUT <span class="text-muted fw-normal">(opcional)</span></label><input id="d_rut" class="form-control form-control-dark" placeholder="12345678-5" autocomplete="off"></div>
+              <div class="col-12 col-md-4"><div class="form-label" id="insideDateLabel">Última actualización</div><div class="form-control form-control-dark d-flex align-items-center" aria-labelledby="insideDateLabel"><i class="bi bi-calendar3 me-2" aria-hidden="true"></i><span id="d_fecha_text">Consultando…</span></div></div>
+              <div class="col-12 col-md-4"><label class="form-label" for="d_rut">Nombre, RUT o unidad <span class="text-muted fw-normal">(opcional)</span></label><input id="d_rut" class="form-control form-control-dark" maxlength="120" placeholder="Nombre o RUT" autocomplete="off"></div><div class="col-12 col-md-4"><label class="form-label" for="d_puesto">Puesto de ingreso</label><select id="d_puesto" class="form-select form-control-dark"><option value="">Todos</option></select></div>
             </div>
-            <p class="small text-muted mt-3 mb-0" id="d_estado" role="status" aria-live="polite">Consultando presencia actual…</p><div class="mt-4 table-wrap" id="tablaDentro"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div>
+            <label class="small rows-label mt-3" for="insideLimit">Filas por página<select id="insideLimit" class="form-select form-control-dark"><option>25</option><option>50</option><option>100</option></select></label><p class="small text-muted mt-3 mb-0" id="d_estado" role="status" aria-live="polite">Consultando presencia actual…</p><div class="mt-4 table-wrap" id="tablaDentro"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div><div class="table-pagination mt-3" aria-label="Páginas de personal dentro"><button id="insidePrev" type="button" class="btn btn-outline-light" onclick="cargarDentro(Tablas.numero('inside')-1)" disabled>Anterior</button><label for="insidePage" class="small">Página</label><input id="insidePage" class="form-control form-control-dark page-number" type="number" min="1" value="1" disabled><button id="insideNext" type="button" class="btn btn-outline-light" onclick="cargarDentro(Tablas.numero('inside')+1)" disabled>Siguiente</button></div>
           </div>
         </div>
       </div>

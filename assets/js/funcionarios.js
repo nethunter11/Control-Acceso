@@ -17,7 +17,7 @@
   async function load(nextPage=1) {
     const current=++sequence;
     try {
-      const params=new URLSearchParams({q:el('staffSearch').value.trim(),estado:el('staffStateFilter').value,page:String(nextPage)});
+      const params=new URLSearchParams({q:el('staffSearch').value.trim(),estado:el('staffStateFilter').value,page:String(nextPage),limit:el('staffLimit').value});
       const data=await request(null,'?'+params);
       if(current!==sequence) return;
       page=data.page; records=new Map(data.items.map(row=>[row.rut,row]));
@@ -25,8 +25,7 @@
       for(const row of data.items) html+='<tr><td class="mono">'+escape(row.rut)+'</td><td>'+escape(row.nombres)+'</td><td>'+escape(row.unidad || '—')+'</td><td>'+escape(row.grado || '—')+'</td><td><span class="badge '+(row.estado==='ACTIVO'?'text-bg-success':'text-bg-secondary')+'">'+escape(row.estado)+'</span></td><td><button type="button" class="btn btn-sm btn-outline-light" data-edit="'+escape(row.rut)+'">Editar</button></td></tr>';
       if(!data.items.length) html+='<tr><td colspan="6"><div class="table-empty">No hay funcionarios para esta búsqueda.</div></td></tr>';
       el('staffTable').innerHTML=html+'</tbody></table></div>';
-      message('staffListSummary',data.total+' funcionarios · Página '+data.page+' de '+data.pages);
-      el('staffPrev').disabled=page<=1; el('staffNext').disabled=page>=data.pages;
+      message('staffListSummary',Tablas.resumen(data));Tablas.estado('staff',data);
     } catch(error) {if(current===sequence) message('staffListSummary',error.message,true);}
   }
   function edit(rut) {
@@ -92,6 +91,9 @@
     el('staffNew').addEventListener('click',()=>{clearForm();message('staffMessage','');});
     el('staffSearchForm').addEventListener('submit',event=>{event.preventDefault();load(1);});
     el('staffStateFilter').addEventListener('change',()=>load(1));
+    el('staffLimit').addEventListener('change',()=>load(1));
+    el('staffPage').addEventListener('change',()=>load(Tablas.numero('staff')));
+    el('staffPage').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();load(Tablas.numero('staff'));}});
     el('staffPrev').addEventListener('click',()=>load(page-1));
     el('staffNext').addEventListener('click',()=>load(page+1));
     el('staffTable').addEventListener('click',event=>{const button=event.target.closest('[data-edit]');if(button)edit(button.dataset.edit);});

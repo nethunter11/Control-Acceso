@@ -1,5 +1,6 @@
 const roleLabels={GUARDIA:'Guardia',CONTROL_VISITA:'Control de visitas',AUDITOR:'Auditor',ADMIN:'Administrador'};
 let usersById=new Map();
+let usersPage=1,usersSequence=0;
 const userPending=new Set();
 function escapeHtml(value){return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 function userMessage(text,error=false){const element=document.getElementById('nu_msg');element.textContent=text;element.classList.toggle('text-danger',error);}
@@ -10,16 +11,21 @@ async function postJSON(url,payload){
     return response.ok?data:{ok:false,error:data.error || 'No se pudo guardar el cambio.'};
   }catch{return{ok:false,error:'No se pudo confirmar el cambio. Actualiza la lista antes de reintentar.'};}
 }
-async function loadUsers(){
-  const button=document.getElementById('btnUsersRefresh');button.disabled=true;
-  try{await fetchUsersTable();}
-  catch{userMessage('No se pudo actualizar la lista de usuarios.',true);}
-  finally{button.disabled=false;}
+async function loadUsers(page=usersPage){
+  const button=document.getElementById('btnUsersRefresh');button.disabled=true;const expected=usersSequence+1;
+  try{await fetchUsersTable(page);}
+  catch{if(expected===usersSequence)document.getElementById('usersSummary').textContent='La lista no está actualizada. Intenta actualizar nuevamente.';}
+  finally{if(expected===usersSequence)button.disabled=false;}
 }
-async function fetchUsersTable(){
-  const response=await fetch('/Control-Acceso/api/admin_users_list.php',{cache:'no-store'});
+async function fetchUsersTable(page){
+  const generation=++usersSequence;
+  const params=new URLSearchParams({q:document.getElementById('usersSearch').value.trim(),rol:document.getElementById('usersRole').value,activo:document.getElementById('usersActive').value,limit:document.getElementById('usersLimit').value,page:String(page)});
+  document.getElementById('usersSummary').textContent='Actualizando usuarios…';
+  const response=await fetch('/Control-Acceso/api/admin_users_list.php?'+params,{cache:'no-store'});
   const data=await response.json();
   if(!response.ok || !data.ok)throw new Error(data.error || 'No se pudo consultar.');
+  if(generation!==usersSequence)return;usersPage=data.page;
+  document.getElementById('usersSummary').textContent=Tablas.resumen(data);Tablas.estado('users',data);
   usersById=new Map(data.items.map(user=>[Number(user.id),user]));
   let html='<div class="table-responsive"><table class="table table-dark table-hover align-middle mb-0"><thead><tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th><th>Acciones</th></tr></thead><tbody>';
   for(const user of data.items){
@@ -75,4 +81,10 @@ async function deleteUser(id,username){
     await loadUsers();
   }finally{userPending.delete(id);}
 }
-document.addEventListener('DOMContentLoaded',()=>loadUsers());
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('usersFilters').addEventListener('submit',event=>{event.preventDefault();loadUsers(1);});
+  for(const id of ['usersRole','usersActive','usersLimit'])document.getElementById(id).addEventListener('change',()=>loadUsers(1));
+  document.getElementById('usersPage').addEventListener('change',()=>loadUsers(Tablas.numero('users')));
+  document.getElementById('usersPage').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();loadUsers(Tablas.numero('users'));}});
+  loadUsers(1);
+});
