@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/fechas.php';
 
 function app_config(): array {
   static $config = null;

@@ -139,7 +139,7 @@ $activePage = 'registros';
   }
 
   function limpiarFiltros() {
-    document.getElementById('f_fecha').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f_fecha').value = FechasChile.hoy();
     document.getElementById('f_rut').value = '';
     document.getElementById('f_resultado').value = '';
     cargarUltimos();
@@ -151,7 +151,7 @@ $activePage = 'registros';
     // 1) Fecha por defecto = hoy
     const f = document.getElementById('f_fecha');
     if (f && !f.value) {
-      f.value = new Date().toISOString().slice(0,10);
+      f.value = FechasChile.hoy();
     }
 
     // 2) Cargar registros al iniciar

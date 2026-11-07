@@ -264,3 +264,21 @@ La pantalla actualiza cada 15 segundos mientras está visible, muestra la últim
 consulta correcta y avisa si no puede actualizar. El contador conserva el total
 aunque se filtre la tabla por RUT.
 Prueba: `C:\xampp\php\php.exe tests\personal_dentro.php`.
+### Fechas y horario de Chile
+
+La aplicación usa `America/Santiago` en PHP y JavaScript. Cada conexión de la
+aplicación a MariaDB recibe el desfase vigente calculado por PHP; no modifica
+el huso global de XAMPP ni necesita cargar tablas horarias de MariaDB.
+Los filtros usan días civiles completos: desde las 00:00:00 inclusive hasta
+las 00:00:00 del día siguiente exclusive. Se rechazan fechas imposibles y rangos
+invertidos con HTTP 400. Los movimientos existentes conservan sus DATETIME locales;
+no se realiza una migración de datos. Los horarios de verano e invierno dependen
+de las reglas de zona horaria instaladas en PHP y en el navegador.
+
+Pruebas: `C:\xampp\php\php.exe tests\fechas.php` y, con Node.js disponible,
+`node tests/ui_accesos.js`. La prueba de interfaz valida la lógica con elementos
+simulados; no sustituye la comprobación visual en el navegador.
+
+Referencias: [PHP: zona horaria](https://www.php.net/manual/en/function.date-default-timezone-set.php),
+[MariaDB: zona de sesión](https://mariadb.com/docs/server/reference/data-types/string-data-types/character-sets/internationalization-and-localization/time-zones),
+[Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/formatToParts).

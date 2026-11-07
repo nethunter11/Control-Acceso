@@ -58,32 +58,22 @@ $activePage = 'reportes';
         .replaceAll('"','&quot;').replaceAll("'","&#039;");
     }
 
-    function ymd(d){
-      return d.toISOString().slice(0,10);
-    }
-
     function setRango(periodo){
-      const hoy = new Date();
-      const desde = new Date(hoy);
-      const hasta = new Date(hoy);
-
-      if (periodo === 'hoy'){
-        // hoy
-      } else if (periodo === 'ayer'){
-        desde.setDate(desde.getDate()-1);
-        hasta.setDate(hasta.getDate()-1);
-      } else if (periodo === '7d'){
-        desde.setDate(desde.getDate()-6);
-      } else if (periodo === '30d'){
-        desde.setDate(desde.getDate()-29);
-      } else {
-        return; // rango manual
+      const hoy = FechasChile.hoy();
+      let desde = hoy;
+      let hasta = hoy;
+      if (periodo === 'ayer') {
+        desde = hasta = FechasChile.desplazar(hoy,-1);
+      } else if (periodo === '7d') {
+        desde = FechasChile.desplazar(hoy,-6);
+      } else if (periodo === '30d') {
+        desde = FechasChile.desplazar(hoy,-29);
+      } else if (periodo !== 'hoy') {
+        return;
       }
-
-      document.getElementById('f_desde').value = ymd(desde);
-      document.getElementById('f_hasta').value = ymd(hasta);
+      document.getElementById('f_desde').value = desde;
+      document.getElementById('f_hasta').value = hasta;
     }
-
     function resetHoy(){
       document.getElementById('f_periodo').value = 'hoy';
       setRango('hoy');

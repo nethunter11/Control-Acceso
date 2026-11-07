@@ -13,8 +13,8 @@ try {
   // Filtros (GET)
   $rut = trim($_GET['rut'] ?? '');
   $resultado = strtoupper(trim($_GET['resultado'] ?? '')); // APROBADO | RECHAZADO | (vacío = ambos)
-  $desde = trim($_GET['desde'] ?? ''); // YYYY-MM-DD
-  $hasta = trim($_GET['hasta'] ?? ''); // YYYY-MM-DD
+  $desde = $_GET['desde'] ?? ''; // YYYY-MM-DD
+  $hasta = $_GET['hasta'] ?? ''; // YYYY-MM-DD
   $limit = intval($_GET['limit'] ?? 15);
   if ($limit < 1) $limit = 15;
   if ($limit > 200) $limit = 200;
@@ -33,15 +33,17 @@ try {
     $params[] = $resultado;
   }
 
-  if ($desde !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
-    $where[] = "r.fecha_hora >= ?";
-    $params[] = $desde . " 00:00:00";
+  if ($desde !== '') {
+    [$start] = limites_dia_chile($desde);
+    $where[] = 'r.fecha_hora >= ?';
+    $params[] = $start;
   }
-
-  if ($hasta !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
-    $where[] = "r.fecha_hora <= ?";
-    $params[] = $hasta . " 23:59:59";
+  if ($hasta !== '') {
+    [, $end] = limites_dia_chile($hasta);
+    $where[] = 'r.fecha_hora < ?';
+    $params[] = $end;
   }
+  if ($desde !== '' && $hasta !== '') limites_rango_chile($desde, $hasta);
 
   $sql = "SELECT r.id, r.rut, r.tipo, r.modo, r.fecha_hora, r.puesto, r.resultado, r.motivo,
                  r.operador_id, u.username AS operador
@@ -60,6 +62,9 @@ try {
 
   echo json_encode(['ok' => true, 'items' => $rows], JSON_UNESCAPED_UNICODE);
 
+} catch (InvalidArgumentException $error) {
+  http_response_code(400);
+  echo json_encode(['ok'=>false, 'error'=>$error->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);

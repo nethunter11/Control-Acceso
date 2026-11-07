@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/fechas.php';
 
 function preparar_exportacion_csv(array $query): array {
   $table = $query['table'] ?? '';
@@ -11,20 +12,9 @@ function preparar_exportacion_csv(array $query): array {
   $end = null;
   if (array_key_exists('fecha', $query)) {
     $day = $query['fecha'];
-    if (!is_string($day) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $day)) {
-      throw new InvalidArgumentException('Indica un día válido con formato año-mes-día.');
-    }
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $day, new DateTimeZone('America/Santiago'));
-    if (!$date || $date->format('Y-m-d') !== $day || (int)$date->format('Y') < 1000) {
-      throw new InvalidArgumentException('La fecha seleccionada no es válida.');
-    }
+    [$start, $end] = limites_dia_chile($day);
     if (!in_array($table, ['registros_acceso','visitas'], true)) {
       throw new InvalidArgumentException('Este listado se exporta completo y no admite filtro por día.');
-    }
-    $start = $date->format('Y-m-d') . ' 00:00:00';
-    $end = $date->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
-    if (strlen($end) !== 19) {
-      throw new InvalidArgumentException('La fecha está fuera del rango admitido.');
     }
   }
 

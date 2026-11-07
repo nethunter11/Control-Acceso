@@ -7,7 +7,7 @@ require_api_roles(['ADMIN','GUARDIA','AUDITOR']);
 
 try {
   $rut = trim($_GET['rut'] ?? '');
-  $fecha = trim($_GET['fecha'] ?? '');
+  $fecha = $_GET['fecha'] ?? '';
   $resultado = trim($_GET['resultado'] ?? '');
   $limit = max(1, min(200, intval($_GET['limit'] ?? 50)));
   $where = [];
@@ -16,9 +16,10 @@ try {
     $where[] = 'e.rut LIKE ?';
     $params[] = '%' . $rut . '%';
   }
-  if ($fecha !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $fecha)) {
-    $where[] = '((e.fecha_hora >= ? AND e.fecha_hora <= ?) OR (s.fecha_hora >= ? AND s.fecha_hora <= ?))';
-    $params = array_merge($params, [$fecha.' 00:00:00', $fecha.' 23:59:59', $fecha.' 00:00:00', $fecha.' 23:59:59']);
+  if ($fecha !== '') {
+    [$start, $end] = limites_dia_chile($fecha);
+    $where[] = '((e.fecha_hora >= ? AND e.fecha_hora < ?) OR (s.fecha_hora >= ? AND s.fecha_hora < ?))';
+    $params = array_merge($params, [$start, $end, $start, $end]);
   }
   if (in_array($resultado, ['APROBADO','RECHAZADO'], true)) {
     $where[] = 'e.resultado = ?';
@@ -63,6 +64,9 @@ try {
   $st = db()->prepare($sql);
   $st->execute($params);
   echo json_encode(['ok'=>true, 'items'=>$st->fetchAll()], JSON_UNESCAPED_UNICODE);
+} catch (InvalidArgumentException $error) {
+  http_response_code(400);
+  echo json_encode(['ok'=>false, 'error'=>$error->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $error) {
   http_response_code(500);
   error_log('Historial de accesos: ' . $error->getMessage());

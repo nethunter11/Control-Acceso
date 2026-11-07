@@ -15,6 +15,8 @@ function db(): PDO {
   $opt = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    // Cada conexión usa el desfase vigente de Santiago; no requiere tablas horarias en MariaDB.
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '" . desfase_horario_chile() . "'",
   ];
   return new PDO($dsn, $user, $pass, $opt);
 }

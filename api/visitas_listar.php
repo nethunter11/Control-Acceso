@@ -8,7 +8,7 @@ require_roles(['ADMIN','CONTROL_VISITA']);
 try {
   $pdo = db();
 
-  $fecha = trim($_GET['fecha'] ?? '');     // YYYY-MM-DD
+  $fecha = $_GET['fecha'] ?? '';     // YYYY-MM-DD
   $rut = trim($_GET['rut'] ?? '');
   $estado = strtoupper(trim($_GET['estado'] ?? '')); // DENTRO / SALIO / (vacío)
   $limit = intval($_GET['limit'] ?? 50);
@@ -28,10 +28,11 @@ try {
     $params[] = $estado;
   }
 
-  if ($fecha !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-    $where[] = "fecha_hora_entrada >= ? AND fecha_hora_entrada <= ?";
-    $params[] = $fecha . " 00:00:00";
-    $params[] = $fecha . " 23:59:59";
+  if ($fecha !== '') {
+    [$start, $end] = limites_dia_chile($fecha);
+    $where[] = 'fecha_hora_entrada >= ? AND fecha_hora_entrada < ?';
+    $params[] = $start;
+    $params[] = $end;
   }
 
   $sql = "SELECT id, nombre, rut, telefono, modo, patente, puesto, motivo,
@@ -48,6 +49,9 @@ try {
 
   echo json_encode(['ok' => true, 'items' => $rows], JSON_UNESCAPED_UNICODE);
 
+} catch (InvalidArgumentException $error) {
+  http_response_code(400);
+  echo json_encode(['ok'=>false, 'error'=>$error->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);

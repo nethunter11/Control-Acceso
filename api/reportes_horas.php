@@ -7,14 +7,7 @@ require_once __DIR__ . '/../app/db.php';
 try {
   $pdo = db();
 
-  $fecha = trim($_GET['fecha'] ?? '');
-  if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-    echo json_encode(['ok'=>false,'error'=>'Fecha inválida'], JSON_UNESCAPED_UNICODE);
-    exit;
-  }
-
-  $dt1 = $fecha . " 00:00:00";
-  $dt2 = $fecha . " 23:59:59";
+  [$dt1, $dt2] = limites_dia_chile($_GET['fecha'] ?? '');
 
   $st = $pdo->prepare("
     SELECT
@@ -23,7 +16,7 @@ try {
       SUM(tipo='SALIDA') AS salidas
     FROM registros_acceso
     WHERE tipo IN ('ENTRADA','SALIDA')
-      AND fecha_hora >= ? AND fecha_hora <= ?
+      AND fecha_hora >= ? AND fecha_hora < ?
       AND resultado='APROBADO'
     GROUP BY HOUR(fecha_hora)
     ORDER BY hora
@@ -33,6 +26,9 @@ try {
 
   echo json_encode(['ok'=>true,'items'=>$rows], JSON_UNESCAPED_UNICODE);
 
+} catch (InvalidArgumentException $error) {
+  http_response_code(400);
+  echo json_encode(['ok'=>false, 'error'=>$error->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok'=>false,'error'=>'Error interno: '.$e->getMessage()], JSON_UNESCAPED_UNICODE);

@@ -260,14 +260,14 @@ $activePage = 'visitas';
     }
 
     function limpiarFiltros(){
-      document.getElementById('f_fecha').value = new Date().toISOString().slice(0,10);
+      document.getElementById('f_fecha').value = FechasChile.hoy();
       document.getElementById('f_rut').value = '';
       document.getElementById('f_estado').value = '';
       cargarVisitas();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('f_fecha').value = new Date().toISOString().slice(0,10);
+      document.getElementById('f_fecha').value = FechasChile.hoy();
       cargarVisitas();
     });
   </script>

@@ -7,9 +7,9 @@
   const format = new Intl.NumberFormat('es-CL',{maximumFractionDigits:1});
   const percent = value => number(value) ? format.format(value)+' %' : '—';
   const gib = value => number(value) ? format.format(value/1073741824) : '—';
-  const clock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'America/Santiago'});
-  const chartClock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Santiago'});
-  const fullDate = new Intl.DateTimeFormat('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'America/Santiago'});
+  const clock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:FechasChile.zona});
+  const chartClock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:FechasChile.zona});
+  const fullDate = new Intl.DateTimeFormat('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:FechasChile.zona});
   let last = null, chart = null, timer = null, inFlight = false, paused = false, stopped = false, authFailed = false, controller = null;
 
   function text(id,value){ byId(id).textContent = value; }
