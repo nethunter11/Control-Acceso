@@ -2,6 +2,7 @@
 $pageInfo = [
   'validacion' => ['Operaciones', 'Validación de acceso', 'Consulta funcionarios y registra sus entradas y salidas.'],
   'visitas' => ['Operaciones', 'Control de visitas', 'Registra ingresos y consulta el estado de cada visita.'],
+  'funcionarios' => ['Administración', 'Funcionarios', 'Administra el personal institucional y revisa los cambios antes de importar.'],
   'registros' => ['Seguimiento', 'Registros de acceso', 'Consulta movimientos, resultados y operadores.'],
   'reportes' => ['Seguimiento', 'Reportes', 'Revisa la actividad de acceso y su distribución en el tiempo.'],
   'config' => ['Administración', 'Configuración', 'Administra usuarios, revisa el sistema y exporta tus registros.'],

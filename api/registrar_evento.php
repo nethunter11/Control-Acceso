@@ -81,7 +81,7 @@ try {
 
     $resultado = 'RECHAZADO';
     $motivo = null;
-    if ($f['estado'] !== 'ACTIVO') {
+    if ($f['estado'] !== 'ACTIVO' && $tipo !== 'SALIDA') {
       $motivo = 'Funcionario INACTIVO';
     } else {
       $resultado = 'APROBADO';

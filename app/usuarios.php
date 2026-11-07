@@ -23,7 +23,8 @@ function usuario_admin_operar(PDO $pdo, array $actor, string $action, array $dat
     if ($action === 'create') {
       $username = usuario_texto($data,'username',60);
       $password = $data['password'] ?? '';
-      if (!is_string($password) || strlen($password) < 8 || strlen($password) > 72) throw new UsuarioOperacionError('La contraseña debe tener entre 8 y 72 bytes.');
+      if (!is_string($password) || preg_match('//u',$password)!==1 || mb_strlen($password,'UTF-8') < 8) throw new UsuarioOperacionError('La contraseña debe tener al menos 8 caracteres.');
+      if (strlen($password) > 72) throw new UsuarioOperacionError('La contraseña es demasiado larga. Usa una más corta.');
       $role = usuario_texto($data,'rol',30);
       if (!in_array($role,$allowed,true)) throw new UsuarioOperacionError('Selecciona un rol válido.');
       $active = $data['activo'] ?? 1;
@@ -41,7 +42,8 @@ function usuario_admin_operar(PDO $pdo, array $actor, string $action, array $dat
     if (!$target) throw new UsuarioOperacionError('El usuario no existe.',404);
     if ($action === 'reset_password') {
       $password = $data['password'] ?? '';
-      if (!is_string($password) || strlen($password) < 8 || strlen($password) > 72) throw new UsuarioOperacionError('La contraseña debe tener entre 8 y 72 bytes.');
+      if (!is_string($password) || preg_match('//u',$password)!==1 || mb_strlen($password,'UTF-8') < 8) throw new UsuarioOperacionError('La contraseña debe tener al menos 8 caracteres.');
+      if (strlen($password) > 72) throw new UsuarioOperacionError('La contraseña es demasiado larga. Usa una más corta.');
       $pdo->prepare('UPDATE usuarios SET password_hash=?,session_version=session_version+1 WHERE id=?')->execute([password_hash($password,PASSWORD_DEFAULT),$id]);
       return ['ok'=>true,'reauthenticate'=>(int)$actor['id'] === (int)$id];
     }

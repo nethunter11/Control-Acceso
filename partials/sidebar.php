@@ -4,6 +4,7 @@ $rol = strtoupper($_SESSION['user']['rol'] ?? '');
 $navigation = [
   ['validacion', 'index.php', 'shield-check', 'Validación', ['ADMIN','GUARDIA']],
   ['visitas', 'visitas.php', 'people', 'Visitas', ['ADMIN','CONTROL_VISITA']],
+  ['funcionarios', 'funcionarios.php', 'person-badge', 'Funcionarios', ['ADMIN']],
   ['registros', 'registros.php', 'journal-text', 'Registros', ['ADMIN','GUARDIA','AUDITOR']],
   ['reportes', 'reportes.php', 'bar-chart-line', 'Reportes', ['ADMIN','AUDITOR']],
 ];

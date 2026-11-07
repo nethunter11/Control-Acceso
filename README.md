@@ -312,3 +312,35 @@ salida con nombre y RUT, y se guarda el operador de la sesión mediante una
 actualización condicional que no sobrescribe salidas previas. Los registros
 antiguos mantienen el operador desconocido como Sin registro. El CSV incluye los
 operadores de entrada y salida. Prueba: `tests/visitas_control.php`.
+### Gestión de funcionarios desde la web
+
+Ingresa como ADMIN y abre **Funcionarios** en el menú izquierdo. Puedes buscar
+por RUT (con o sin puntos), nombre o unidad, crear fichas y editar nombre, unidad,
+grado y estado. El RUT identifica la ficha y no se reemplaza al editar. La
+desactivación conserva los movimientos, impide nuevas entradas y permite cerrar
+un ingreso aprobado que aún no tenga salida. La lista muestra total y páginas.
+
+Para importar, descarga **Plantilla CSV** y completa estas columnas:
+`rut,nombres,unidad,grado,estado`. Guarda en CSV UTF-8, con comas o punto y coma.
+Nombre, RUT y estado son obligatorios; estado acepta ACTIVO o INACTIVO. El límite
+es de 1 MB y 1000 filas. La exportación de funcionarios existente también puede
+revisarse e importarse: su columna fecha_actualizacion se ignora al importar.
+
+**Solo crear** rechaza los RUT ya existentes. **Crear y actualizar** muestra los
+valores que cambiarán, incluidos los campos que quedarán vacíos. Revisa todas las
+filas y pulsa Confirmar importación: cualquier error bloquea el archivo completo.
+La vista previa dura diez minutos y solo se utiliza una vez. Si una ficha cambia
+después de revisarla, la operación se revierte completa y debes generar otra vista
+previa. Guardar o importar requiere sesión de administrador y CSRF válidos.
+
+Pruebas: `tests/funcionarios.php`, `tests/autenticacion.php` y
+`node tests/ui_administracion.js` (con Node.js disponible). Las pruebas de interfaz
+simulan elementos de pantalla y solicitudes; la apariencia se revisa en el navegador.
+
+### Recuperación de estas mejoras
+
+Los cuatro puntos se guardan en commits locales separados de pruebas.
+Las migraciones agregan la versión de sesión de usuarios y el operador de salida
+de visitas; no reescriben movimientos antiguos. Revertir código no revierte datos
+editados o importados: conserva los respaldos SQL privados y solicita una
+restauración revisando antes los movimientos posteriores al respaldo.

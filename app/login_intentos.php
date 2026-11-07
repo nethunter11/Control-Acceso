@@ -3,7 +3,7 @@ function login_limite(string $username, bool $failed = false, bool $reset = fals
   $directory = sys_get_temp_dir().'/ca-login-'.substr(hash('sha256',__DIR__),0,16);
   if (!is_dir($directory) && !@mkdir($directory,0700,true) && !is_dir($directory)) throw new RuntimeException('No se pudo verificar el acceso.');
   $key = hash('sha256',($_SERVER['REMOTE_ADDR'] ?? 'local')."\0".mb_strtolower($username,'UTF-8'));
-  $file = fopen($directory.'/'.$key.'.json','c+');
+  $file = @fopen($directory.'/'.$key.'.json','c+');
   if (!$file || !flock($file,LOCK_EX)) throw new RuntimeException('No se pudo verificar el acceso.');
   try {
     $state = json_decode(stream_get_contents($file),true) ?? [];

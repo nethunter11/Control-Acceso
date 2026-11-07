@@ -29,7 +29,7 @@ function auth_login(array $user): void {
   $lookup = db()->prepare('SELECT id,username,rol,activo,password_hash,session_version FROM usuarios WHERE id=?');
   $lookup->execute([(int)($user['id'] ?? 0)]);
   $current = $lookup->fetch();
-  if (!$current || (int)$current['activo'] !== 1) throw new RuntimeException('La cuenta no está disponible.');
+  if (!$current || (int)$current['activo'] !== 1 || (isset($user['password_hash']) && !hash_equals($current['password_hash'],$user['password_hash']))) throw new RuntimeException('La cuenta no está disponible.');
   $user = $current;
   session_regenerate_id(true);
   $_SESSION = [];
