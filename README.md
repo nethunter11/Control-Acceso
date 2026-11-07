@@ -344,3 +344,13 @@ Las migraciones agregan la versión de sesión de usuarios y el operador de sali
 de visitas; no reescriben movimientos antiguos. Revertir código no revierte datos
 editados o importados: conserva los respaldos SQL privados y solicita una
 restauración revisando antes los movimientos posteriores al respaldo.
+### Operación visual en validación
+
+Enter consulta el RUT. La ficha muestra la presencia registrada (Dentro, Fuera
+o Sin movimientos aprobados), el último aprobado, su fecha completa, puesto y
+operador. Cada entrada o salida se confirma con nombre, RUT, puesto y modo.
+El resultado conserva la identidad, la fecha guardada y el operador hasta la
+siguiente operación o Limpiar. Las entradas usan verde, las salidas ámbar y los
+rechazos rojo. Los cambios de permisos se confirman dentro de la aplicación y
+los errores aparecen en pantalla. Pruebas: `tests/operacion_visual.php` y
+`node tests/ui_operacion.js` con Node.js disponible.

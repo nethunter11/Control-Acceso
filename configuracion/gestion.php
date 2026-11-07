@@ -37,7 +37,7 @@ include __DIR__.'/../partials/config-header.php';
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-3 flex-wrap mt-3">
-                    <button type="button" class="btn btn-primary" onclick="createUser()"><i class="bi bi-person-plus me-1"></i>Crear usuario</button>
+                    <button id="nu_create" type="button" class="btn btn-primary" onclick="createUser()"><i class="bi bi-person-plus me-1"></i>Crear usuario</button>
                     <div id="nu_msg" class="small text-muted" role="status" aria-live="polite"></div>
                   </div>
                 </div>

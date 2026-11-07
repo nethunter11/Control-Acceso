@@ -10,7 +10,8 @@ require_once __DIR__ . '/../app/puestos.php';
 
 require_api_roles(['ADMIN','GUARDIA'],['POST']);
 
-$operadorId = (int)(auth_user()['id'] ?? 0);
+$operador = auth_user();
+$operadorId = (int)($operador['id'] ?? 0);
 if ($operadorId <= 0) {
   http_response_code(401);
   echo json_encode(['ok'=>false,'error'=>'Tu sesión no identifica al operador. Vuelve a iniciar sesión.'], JSON_UNESCAPED_UNICODE);
@@ -120,6 +121,10 @@ try {
     $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, operador_id, resultado, motivo)
                           VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)");
     $st2->execute([$rut, $tipo, $modo, $puesto, $operadorId, $resultado, $motivo]);
+    $eventId = (int)$pdo->lastInsertId();
+    $saved = $pdo->prepare('SELECT fecha_hora FROM registros_acceso WHERE id=?');
+    $saved->execute([$eventId]);
+    $fechaHora = $saved->fetchColumn();
     return [
       'ok' => true,
       'rut' => $rut,
@@ -129,15 +134,19 @@ try {
       'resultado' => $resultado,
       'motivo' => $motivo,
       'guardado' => true,
+      'id' => $eventId,
+      'fecha_hora' => $fechaHora,
       'operador_id' => $operadorId,
       'funcionario' => $f,
     ];
   });
+  if ($response['guardado'] ?? false) $response['operador'] = $operador['username'];
   echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (BloqueoRutOcupado $e) {
   http_response_code(409);
   echo json_encode(['ok' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+  error_log('Registro de acceso: '.$e->getMessage());
+  echo json_encode(['ok' => false, 'error' => 'No se pudo registrar el movimiento. Consulta el estado antes de reintentar.'], JSON_UNESCAPED_UNICODE);
 }
