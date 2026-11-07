@@ -60,16 +60,16 @@ $activePage = 'validacion';
         <div class="card card-dark">
           <div class="card-header card-header-dark">
             <div class="d-flex align-items-center justify-content-between">
-              <div><div class="d-flex align-items-center gap-2"><h2 class="h6 mb-0">Personal dentro</h2><span class="badge badge-soft" id="cntDentro">0</span></div><div class="text-muted small">Consulta el personal con ingreso registrado.</div></div>
+              <div><div class="d-flex align-items-center gap-2"><h2 class="h6 mb-0">Personal dentro</h2><span class="badge badge-soft" id="cntDentro">0</span></div><div class="text-muted small">Incluye ingresos de días anteriores que aún no tienen salida.</div></div>
               <button class="btn btn-sm btn-outline-light" onclick="cargarDentro()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button>
             </div>
           </div>
           <div class="card-body">
             <div class="row g-3 align-items-end">
-              <div class="col-12 col-md-6"><div class="form-label" id="insideDateLabel">Fecha de consulta</div><div class="form-control form-control-dark d-flex align-items-center" aria-labelledby="insideDateLabel"><i class="bi bi-calendar3 me-2" aria-hidden="true"></i><span id="d_fecha_text">Hoy</span></div></div>
+              <div class="col-12 col-md-6"><div class="form-label" id="insideDateLabel">Última actualización</div><div class="form-control form-control-dark d-flex align-items-center" aria-labelledby="insideDateLabel"><i class="bi bi-calendar3 me-2" aria-hidden="true"></i><span id="d_fecha_text">Consultando…</span></div></div>
               <div class="col-12 col-md-6"><label class="form-label" for="d_rut">Filtrar por RUT <span class="text-muted fw-normal">(opcional)</span></label><input id="d_rut" class="form-control form-control-dark" placeholder="12345678-5" autocomplete="off"></div>
             </div>
-            <div class="mt-4 table-wrap" id="tablaDentro"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div>
+            <p class="small text-muted mt-3 mb-0" id="d_estado" role="status" aria-live="polite">Consultando presencia actual…</p><div class="mt-4 table-wrap" id="tablaDentro"><div class="table-loading" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando registros…</div></div>
           </div>
         </div>
       </div>
@@ -77,6 +77,7 @@ $activePage = 'validacion';
   </main>
 </div>
 <?php include __DIR__ . '/partials/scripts.php'; ?>
+<script src="/Control-Acceso/assets/js/personal-dentro.js?v=<?= filemtime(__DIR__ . '/assets/js/personal-dentro.js') ?>"></script>
   <script>
   async function postJSON(url, payload) {
     const res = await fetch(url, {
@@ -408,9 +409,6 @@ function setModo(modo){
   // Quick search (topbar) -> rellena filtro rut y aplica
   document.addEventListener('DOMContentLoaded', () => {
 
-    const f = document.getElementById('d_fecha');
-    if (f && !f.value) f.value = new Date().toISOString().slice(0,10);
-    cargarDentro();
 
     // Enter en el input RUT -> registrar ENTRADA
     const rutInput = document.getElementById('rut');
@@ -429,66 +427,6 @@ function setModo(modo){
       }
     });
   });
-
-  async function cargarDentro(){
-    document.getElementById('d_fecha_text').textContent = new Date().toISOString().slice(0,10);
-    const fecha = document.getElementById('d_fecha')?.value || new Date().toISOString().slice(0,10);
-    const rut = document.getElementById('d_rut')?.value.trim() || '';
-
-    const params = new URLSearchParams();
-    params.set('fecha', fecha);
-    // el filtro rut lo hacemos client-side (más simple)
-    const res = await fetch('api/personal_dentro.php?' + params.toString(), { cache:'no-store' });
-    const data = await res.json();
-
-    if (!data.ok){
-      document.getElementById('tablaDentro').innerHTML =
-        `<div class="alert alert-danger mb-0">${escapeHtml(data.error || 'Error cargando')}</div>`;
-      return;
-    }
-
-    let rows = data.items || [];
-    if (rut) rows = rows.filter(x => (x.rut || '').includes(rut));
-
-    const badge = document.getElementById('cntDentro');
-    if (badge) badge.textContent = rows.length;    
-
-    let html = `<div class="table-responsive">
-      <table class="table table-dark table-hover align-middle mb-0">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>RUT</th>
-            <th>Unidad</th>
-            <th>Grado</th>
-            <th>Modo</th>
-            <th>Puesto</th>
-            <th>Último</th>
-          </tr>
-        </thead><tbody>`;
-
-    for (const r of rows){
-      html += `<tr>
-        <td>${escapeHtml(r.nombres || '')}</td>
-        <td class="mono">${escapeHtml(r.rut || '')}</td>
-        <td>${escapeHtml(r.unidad || '')}</td>
-        <td>${escapeHtml(r.grado || '')}</td>
-        <td>${escapeHtml(r.modo || '')}</td>
-        <td>${escapeHtml(r.puesto || '')}</td>
-        <td>${escapeHtml(r.ultima_hora || '')}</td>
-      </tr>`;
-    }
-
-    if (rows.length === 0) html += "<tr><td colspan=\"7\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No se encontró personal para esta consulta.</div></td></tr>";
-      html += `</tbody></table></div>`;
-    document.getElementById('tablaDentro').innerHTML = html;
-  }
-
-  function limpiarDentro(){
-    document.getElementById('d_fecha').value = new Date().toISOString().slice(0,10);
-    document.getElementById('d_rut').value = '';
-    cargarDentro();
-  }
 
   </script>
 

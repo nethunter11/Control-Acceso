@@ -254,3 +254,13 @@ sin entrada y las entradas duplicadas permanecen visibles sin inventar parejas.
 Las fechas completas distinguen permanencias nocturnas; el filtro por día incluye
 la pareja si su entrada o su salida ocurrió ese día.
 Prueba: `C:\xampp\php\php.exe tests\historial.php` (requiere respaldo SQL verificado).
+
+### Personal dentro
+
+Se consulta el último movimiento aprobado de todo el historial de cada RUT,
+ordenado por fecha e ID. Los ingresos sin salida permanecen después de medianoche.
+La desactivación administrativa no oculta a alguien que continúa dentro.
+La pantalla actualiza cada 15 segundos mientras está visible, muestra la última
+consulta correcta y avisa si no puede actualizar. El contador conserva el total
+aunque se filtre la tabla por RUT.
+Prueba: `C:\xampp\php\php.exe tests\personal_dentro.php`.
