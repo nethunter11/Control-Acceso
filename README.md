@@ -292,3 +292,14 @@ rol, estado o contraseña incrementan una versión de sesión; las sesiones
 anteriores deben autenticarse otra vez, incluso si la cuenta se reactiva.
 Migración de pruebas: `C:\xampp\php\php.exe tools/migrar-pruebas.php`, después de
 respaldar SQL y verificar su restauración. Prueba: `tests/usuarios_seguridad.php`.
+### Sesiones y acciones protegidas
+
+El límite elegido es de 60 minutos sin actividad y 12 horas desde el acceso.
+Los refrescos de datos no renuevan la sesión. La pantalla comunica actividad
+real al servidor mediante POST con CSRF. Se utilizan cookies HttpOnly, SameSite
+Lax, modo estricto y Secure cuando se sirve por HTTPS. Las acciones de escritura
+y el cierre de sesión solo admiten POST con token; las APIs responden JSON 401,
+403 o 405 según corresponda. El inicio valida un token no vacío y limita a ocho
+intentos fallidos por usuario e IP cada diez minutos. Las contraseñas se
+restablecen en un diálogo con campo oculto. Prueba: `tests/sesiones_seguridad.php`.
+Referencia: [OWASP: sesiones](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).

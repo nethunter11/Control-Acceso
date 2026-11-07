@@ -3,7 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/auth.php';
 
-require_roles(['ADMIN','CONTROL_VISITA']);
+require_api_roles(['ADMIN','CONTROL_VISITA'],['GET']);
 
 try {
   $pdo = db();

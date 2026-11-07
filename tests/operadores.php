@@ -10,6 +10,7 @@ require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/puestos.php';
+require_once __DIR__.'/support/security.php';
 
 function operator_assert(bool $condition, string $message): void {
   if (!$condition) {
@@ -29,7 +30,7 @@ function operator_request(string $fixture, string $path, ?array $payload = null)
   if ($payload !== null) {
     curl_setopt_array($http, [
       CURLOPT_POST => true,
-      CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+      CURLOPT_HTTPHEADER => ['Content-Type: application/json','X-CSRF-Token: '.test_session_token($fixture)],
       CURLOPT_POSTFIELDS => json_encode($payload, JSON_THROW_ON_ERROR),
     ]);
   }
@@ -93,7 +94,8 @@ try {
     session_write_close();
   }
   session_id(bin2hex(random_bytes(16)));
-  auth_login(['id'=>0,'username'=>'sesion_incompleta','rol'=>'ADMIN']);
+  auth_start_session();
+  $_SESSION = ['user'=>['id'=>0,'username'=>'sesion_incompleta','rol'=>'ADMIN']];
   $fixtures['INCOMPLETA'] = session_id();
   session_write_close();
 

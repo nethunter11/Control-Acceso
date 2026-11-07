@@ -119,7 +119,7 @@
     }
 
     async function resetPassPrompt(id, username){
-      const newPass = prompt(`Nueva contraseña para ${username} (mín. 8 caracteres):`);
+      const newPass = await Dialogos.password('Restablecer contraseña', `Usuario: ${username}. Sus sesiones anteriores se cerrarán.`);
       if (!newPass) return;
 
       const data = await postJSON('/Control-Acceso/api/admin_users_reset_password.php', { id, password: newPass });
@@ -127,11 +127,12 @@
         alert(data.error || 'Error reseteando password');
         return;
       }
-      alert('Contraseña actualizada.');
+      if (data.reauthenticate) { window.location.assign('/Control-Acceso/auth/login.php'); return; }
+      document.getElementById('nu_msg').textContent = 'Contraseña actualizada. Se cerraron las sesiones anteriores.';
     }
 
     async function deleteUser(id, username){
-      const ok = confirm(`¿Seguro que deseas eliminar el usuario "${username}"?\nEsta acción NO se puede deshacer.`);
+      const ok = await Dialogos.confirmar('Eliminar usuario', `Usuario: ${username}. Si tiene movimientos registrados, debes desactivarlo.`);
       if (!ok) return;
 
       const data = await postJSON('/Control-Acceso/api/admin_users_delete.php', { id });

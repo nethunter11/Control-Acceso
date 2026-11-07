@@ -6,21 +6,29 @@ putenv('CONTROL_ACCESO_ENV=testing');
 require_once __DIR__.'/../../app/db.php';
 require_once __DIR__.'/../../app/auth.php';
 require_once __DIR__.'/../../app/rut.php';
+require_once __DIR__.'/security.php';
 
 function qa_check(bool $condition, string $message): void {
   if (!$condition) throw new RuntimeException($message);
 }
-function qa_http(?string $session, string $path): array {
+function qa_http(?string $session, string $path, ?array $payload = null, ?string $method = null, bool $csrf = true): array {
   $http = curl_init('http://127.0.0.1:8081/Control-Acceso/'.$path);
+  $receivedHeaders = [];
   curl_setopt_array($http, [
     CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
     CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>10,
     CURLOPT_COOKIE=>app_config()['session']['name'].'='.($session ?? ''),
+    CURLOPT_HEADERFUNCTION=>static function ($handle,$line) use (&$receivedHeaders) { $receivedHeaders[]=$line; return strlen($line); },
   ]);
+  $headers = [];
+  if ($csrf && $session !== null) $headers[] = 'X-CSRF-Token: '.test_session_token($session);
+  if ($payload !== null) { $headers[] = 'Content-Type: application/json'; curl_setopt($http,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR)); }
+  if ($method !== null) curl_setopt($http,CURLOPT_CUSTOMREQUEST,$method);
+  curl_setopt($http,CURLOPT_HTTPHEADER,$headers);
   try {
     $body = curl_exec($http);
     if ($body === false) throw new RuntimeException('Servidor de pruebas no disponible: '.curl_error($http));
-    return ['status'=>curl_getinfo($http, CURLINFO_HTTP_CODE), 'body'=>$body];
+    return ['status'=>curl_getinfo($http, CURLINFO_HTTP_CODE), 'body'=>$body, 'headers'=>$receivedHeaders];
   } finally { curl_close($http); }
 }
 function qa_json(array $qa, string $path, int $status = 200, string $role = 'ADMIN'): array {

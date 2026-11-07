@@ -8,7 +8,7 @@ require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/concurrencia.php';
 require_once __DIR__ . '/../app/puestos.php';
 
-require_roles(['ADMIN','GUARDIA']);
+require_api_roles(['ADMIN','GUARDIA'],['POST']);
 
 $operadorId = (int)(auth_user()['id'] ?? 0);
 if ($operadorId <= 0) {

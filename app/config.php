@@ -21,6 +21,8 @@ function app_config(): array {
       'name' => null,
       'save_path' => null,
       'cookie_path' => null,
+      'idle_timeout' => 3600,
+      'absolute_timeout' => 43200,
     ],
   ];
 

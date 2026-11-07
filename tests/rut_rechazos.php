@@ -11,6 +11,7 @@ require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/puestos.php';
+require_once __DIR__.'/support/security.php';
 
 function rut_test_response(string $cookie, array $payload, bool $jsonBody): array {
   $http = curl_init('http://localhost:8081/Control-Acceso/api/registrar_evento.php');
@@ -22,6 +23,7 @@ function rut_test_response(string $cookie, array $payload, bool $jsonBody): arra
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => [
       'Accept: application/json',
+      'X-CSRF-Token: '.test_session_token(explode('=',$cookie,2)[1]),
       'Content-Type: ' . ($jsonBody ? 'application/json' : 'application/x-www-form-urlencoded'),
     ],
     CURLOPT_COOKIE => $cookie,

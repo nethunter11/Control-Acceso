@@ -21,6 +21,7 @@ $config = app_config();
 session_id(bin2hex(random_bytes(16)));
 auth_login(['id' => $operatorId, 'username' => 'prueba_concurrencia', 'rol' => 'ADMIN']);
 $fixtureId = session_id();
+$requestToken = csrf_token();
 session_write_close();
 ob_start();
 register_shutdown_function(function () use ($config, $fixtureId): void {
@@ -50,4 +51,5 @@ while (!is_file($startFile)) {
 $_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = $payload;
+$_SERVER['HTTP_X_CSRF_TOKEN'] = $requestToken;
 require __DIR__ . '/../../api/' . $endpoint;

@@ -6,7 +6,7 @@ require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/concurrencia.php';
 require_once __DIR__ . '/../app/puestos.php';
 
-require_roles(['ADMIN','CONTROL_VISITA']);
+require_api_roles(['ADMIN','CONTROL_VISITA'],['POST']);
 
 require_login();
 $u = auth_user();

@@ -20,7 +20,7 @@ $cases = [
   'AUDITOR' => ['role' => 'AUDITOR', 'status' => 200],
   'GUARDIA' => ['role' => 'GUARDIA', 'status' => 403],
   'CONTROL_VISITA' => ['role' => 'CONTROL_VISITA', 'status' => 403],
-  'DESCONOCIDO' => ['role' => 'DESCONOCIDO', 'status' => 403],
+  'DESCONOCIDO' => ['role' => 'DESCONOCIDO', 'status' => 401],
 ];
 $endpoints = [
   'reportes_diario.php?desde=2026-01-01&hasta=2026-01-01' => 'items',
@@ -35,7 +35,10 @@ try {
     session_id(bin2hex(random_bytes(16)));
     auth_start_session();
     if ($case['role'] !== null) {
-      auth_login(['id' => -1, 'username' => 'prueba_reportes', 'rol' => $case['role']]);
+      $lookup = db()->prepare('SELECT id FROM usuarios WHERE activo=1 AND rol=? ORDER BY id LIMIT 1');
+      $lookup->execute([$case['role'] === 'DESCONOCIDO' ? 'GUARDIA' : $case['role']]);
+      auth_login(['id'=>(int)$lookup->fetchColumn()]);
+      if ($case['role'] === 'DESCONOCIDO') $_SESSION['user']['rol'] = 'DESCONOCIDO';
     }
     $fixtures[$label] = session_id();
     session_write_close();

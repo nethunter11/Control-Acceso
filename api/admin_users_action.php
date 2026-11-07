@@ -3,7 +3,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__.'/../app/auth.php';
 require_once __DIR__.'/../app/usuarios.php';
-require_api_roles(['ADMIN']);
+require_api_roles(['ADMIN'],['POST']);
 if (!isset($userAction)) { http_response_code(404); exit; }
 try {
   $data = json_decode(file_get_contents('php://input'),true);

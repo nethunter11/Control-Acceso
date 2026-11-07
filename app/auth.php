@@ -12,9 +12,14 @@ function auth_start_session(): void {
     if (!empty($session['save_path'])) {
       session_save_path($session['save_path']);
     }
-    if (!empty($session['cookie_path'])) {
-      session_set_cookie_params(['path' => $session['cookie_path']]);
-    }
+    ini_set('session.use_strict_mode','1');
+    ini_set('session.use_only_cookies','1');
+    ini_set('session.gc_maxlifetime',(string)$session['absolute_timeout']);
+    session_set_cookie_params([
+      'path'=>$session['cookie_path'] ?: '/Control-Acceso/',
+      'httponly'=>true, 'samesite'=>'Lax',
+      'secure'=>isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    ]);
     session_start();
   }
 }
@@ -28,6 +33,9 @@ function auth_login(array $user): void {
   $user = $current;
   session_regenerate_id(true);
   $_SESSION = [];
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+  $_SESSION['auth_started'] = time();
+  $_SESSION['last_activity'] = time();
   $_SESSION['auth_version'] = (int)$user['session_version'];
   $_SESSION['auth_signature'] = hash('sha256',$user['password_hash']);
   $_SESSION['user'] = [
@@ -42,6 +50,7 @@ function auth_user(): ?array {
   auth_start_session();
   $user = $_SESSION['user'] ?? null;
   if (!is_array($user)) return null;
+  if (auth_expires_at() <= time()) { $_SESSION = []; return null; }
   try {
     $lookup = db()->prepare('SELECT id,username,rol,activo,password_hash,session_version FROM usuarios WHERE id=?');
     $lookup->execute([(int)($user['id'] ?? 0)]);
@@ -62,6 +71,7 @@ function auth_user(): ?array {
     $_SESSION = [];
     return null;
   }
+  if (!headers_sent()) header('Cache-Control: no-store');
   return $_SESSION['user'];
 }
 
@@ -80,6 +90,7 @@ function require_login(): void {
     header('Location: /Control-Acceso/auth/login.php');
     exit;
   }
+  $_SESSION['last_activity'] = time();
 }
 
 function require_role(string $rol): void {
@@ -99,9 +110,9 @@ function csrf_token(): string {
   return $_SESSION['csrf_token'];
 }
 
-function csrf_validate(?string $token): bool {
+function csrf_validate(mixed $token): bool {
   auth_start_session();
-  return is_string($token)
+  return is_string($token) && $token !== ''
     && isset($_SESSION['csrf_token'])
     && hash_equals($_SESSION['csrf_token'], $token);
 }
@@ -122,12 +133,29 @@ function require_roles(array $allowed) {
   }
 }
 
-function require_api_roles(array $allowed): void {
+function require_api_roles(array $allowed, array $methods = ['GET']): void {
+  header('Content-Type: application/json; charset=utf-8');
+  header('X-Content-Type-Options: nosniff');
   header('Cache-Control: no-store');
   $user = auth_user();
   $allowed = array_map('strtoupper', $allowed);
 
-  if ($user !== null && in_array(auth_role(), $allowed, true)) {
+  if ($user !== null && in_array(strtoupper($user['rol']), $allowed, true)) {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if (!in_array($method,$methods,true)) {
+      header('Allow: '.implode(', ',$methods));
+      http_response_code(405);
+      echo json_encode(['ok'=>false,'error'=>'Método no permitido.'],JSON_UNESCAPED_UNICODE);
+      exit;
+    }
+    if (!in_array($method,['GET','HEAD','OPTIONS'],true)) {
+      if (!csrf_validate($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf'] ?? null)) {
+        http_response_code(403);
+        echo json_encode(['ok'=>false,'error'=>'La validación de seguridad venció. Recarga la página.'],JSON_UNESCAPED_UNICODE);
+        exit;
+      }
+      $_SESSION['last_activity'] = time();
+    }
     return;
   }
 
@@ -140,4 +168,9 @@ function require_api_roles(array $allowed): void {
       : 'No tienes permisos para realizar esta operación.',
   ], JSON_UNESCAPED_UNICODE);
   exit;
+}
+
+function auth_expires_at(): int {
+  $config = app_config()['session'];
+  return min((int)($_SESSION['last_activity'] ?? 0)+(int)$config['idle_timeout'],(int)($_SESSION['auth_started'] ?? 0)+(int)$config['absolute_timeout']);
 }

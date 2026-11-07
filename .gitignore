@@ -15,6 +15,7 @@
 /dumps/
 !database/schema.sql
 !database/migrations/*.sql
+!migrations/*.sql
 
 # Archivos temporales y ajustes del equipo
 *.log

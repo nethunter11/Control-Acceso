@@ -10,6 +10,7 @@ require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/puestos.php';
+require_once __DIR__.'/support/security.php';
 
 function gate_assert(bool $condition, string $message): void {
   if (!$condition) {
@@ -24,7 +25,7 @@ function gate_request(string $fixture, string $path, ?array $payload = null, boo
     CURLOPT_COOKIE=>app_config()['session']['name'] . '=' . $fixture]);
   if ($payload !== null) {
     curl_setopt_array($http, [CURLOPT_POST=>true,
-      CURLOPT_HTTPHEADER=>['Content-Type: ' . ($json ? 'application/json' : 'application/x-www-form-urlencoded')],
+      CURLOPT_HTTPHEADER=>['Content-Type: ' . ($json ? 'application/json' : 'application/x-www-form-urlencoded'),'X-CSRF-Token: '.test_session_token($fixture)],
       CURLOPT_POSTFIELDS=>$json ? json_encode($payload, JSON_THROW_ON_ERROR) : http_build_query($payload)]);
   }
   try {

@@ -6,7 +6,7 @@ require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/auth.php';
 
-require_roles(['ADMIN','GUARDIA']);
+require_api_roles(['ADMIN','GUARDIA'],['POST']);
 
 
 function input_data(): array {

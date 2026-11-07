@@ -7,8 +7,7 @@ if (auth_user()) {
   header('Location: /Control-Acceso/index.php');
   exit;
 }
-if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
-$csrf = $_SESSION['csrf'];
+$csrf = csrf_token();
 $err = is_string($_GET['err'] ?? null) ? $_GET['err'] : '';
 ?>
 <!doctype html>
