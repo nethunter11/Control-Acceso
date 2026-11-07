@@ -1,6 +1,7 @@
 <?php
 // app/auth.php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/db.php';
 
 function auth_start_session(): void {
   if (session_status() === PHP_SESSION_NONE) {
@@ -20,17 +21,48 @@ function auth_start_session(): void {
 
 function auth_login(array $user): void {
   auth_start_session();
+  $lookup = db()->prepare('SELECT id,username,rol,activo,password_hash,session_version FROM usuarios WHERE id=?');
+  $lookup->execute([(int)($user['id'] ?? 0)]);
+  $current = $lookup->fetch();
+  if (!$current || (int)$current['activo'] !== 1) throw new RuntimeException('La cuenta no está disponible.');
+  $user = $current;
   session_regenerate_id(true);
+  $_SESSION = [];
+  $_SESSION['auth_version'] = (int)$user['session_version'];
+  $_SESSION['auth_signature'] = hash('sha256',$user['password_hash']);
   $_SESSION['user'] = [
     'id' => (int)$user['id'],
     'username' => $user['username'],
     'rol' => $user['rol'],
+    'session_version' => (int)$user['session_version'],
   ];
 }
 
 function auth_user(): ?array {
   auth_start_session();
-  return $_SESSION['user'] ?? null;
+  $user = $_SESSION['user'] ?? null;
+  if (!is_array($user)) return null;
+  try {
+    $lookup = db()->prepare('SELECT id,username,rol,activo,password_hash,session_version FROM usuarios WHERE id=?');
+    $lookup->execute([(int)($user['id'] ?? 0)]);
+    $current = $lookup->fetch();
+  } catch (Throwable $error) {
+    error_log('Verificación de sesión: '.$error->getMessage());
+    http_response_code(503);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok'=>false,'error'=>'No se pudo verificar la sesión. Inténtalo nuevamente.'],JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+  if (!$current || (int)$current['activo'] !== 1
+      || !in_array($current['rol'],['ADMIN','GUARDIA','CONTROL_VISITA','AUDITOR'],true)
+      || (int)($user['session_version'] ?? 0) !== (int)$current['session_version']
+      || (int)($_SESSION['auth_version'] ?? 0) !== (int)$current['session_version']
+      || !hash_equals(hash('sha256',$current['password_hash']),$_SESSION['auth_signature'] ?? '')
+      || $current['rol'] !== ($user['rol'] ?? '')) {
+    $_SESSION = [];
+    return null;
+  }
+  return $_SESSION['user'];
 }
 
 function auth_logout(): void {

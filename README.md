@@ -282,3 +282,13 @@ simulados; no sustituye la comprobación visual en el navegador.
 Referencias: [PHP: zona horaria](https://www.php.net/manual/en/function.date-default-timezone-set.php),
 [MariaDB: zona de sesión](https://mariadb.com/docs/server/reference/data-types/string-data-types/character-sets/internationalization-and-localization/time-zones),
 [Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/formatToParts).
+### Protección de administración de usuarios
+
+Las operaciones administrativas se coordinan en una transacción y vuelven a
+validar al administrador antes de guardar. No se permite eliminar, desactivar
+ni degradar la cuenta propia, ni perder el último administrador activo. Las
+cuentas con movimientos se desactivan en lugar de eliminarlas. Los cambios de
+rol, estado o contraseña incrementan una versión de sesión; las sesiones
+anteriores deben autenticarse otra vez, incluso si la cuenta se reactiva.
+Migración de pruebas: `C:\xampp\php\php.exe tools/migrar-pruebas.php`, después de
+respaldar SQL y verificar su restauración. Prueba: `tests/usuarios_seguridad.php`.

@@ -48,12 +48,13 @@
 
       for (const u of rows){
         const isActive = Number(u.activo) === 1;
+        const isSelf = Number(u.id) === Number(data.current_user_id);
 
         html += `<tr>
           <td>${u.id}</td>
           <td class="mono">${escapeHtml(u.username)}</td>
           <td>
-            <select class="form-select form-control-dark" aria-label="Rol de ${escapeHtml(u.username)}" onchange="updateRole(${u.id}, this.value)">
+            <select class="form-select form-control-dark" aria-label="Rol de ${escapeHtml(u.username)}" ${isSelf ? 'disabled' : ''} onchange="updateRole(${u.id}, this.value)">
               ${['GUARDIA','CONTROL_VISITA','AUDITOR','ADMIN'].map(r =>
                 `<option value="${r}" ${u.rol===r?'selected':''}>${roleLabels[r]}</option>`
               ).join('')}
@@ -62,7 +63,7 @@
           <td>
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" ${isActive?'checked':''}
-                aria-label="Cuenta activa de ${escapeHtml(u.username)}" onchange="updateActive(${u.id}, this.checked)">
+                aria-label="Cuenta activa de ${escapeHtml(u.username)}" ${isSelf ? 'disabled' : ''} onchange="updateActive(${u.id}, this.checked)">
             </div>
           </td>
           <td><div class="table-actions">
@@ -70,7 +71,7 @@
               <i class="bi bi-key me-1"></i>Restablecer
             </button>
 
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, this.dataset.username)" data-username="${escapeHtml(u.username)}">
+            <button class="btn btn-sm btn-outline-danger" ${isSelf ? 'disabled' : ''} onclick="deleteUser(${u.id}, this.dataset.username)" data-username="${escapeHtml(u.username)}">
               <i class="bi bi-trash me-1"></i>Eliminar
             </button></div>
           </td>
@@ -107,12 +108,14 @@
     async function updateRole(id, rol){
       const data = await postJSON('/Control-Acceso/api/admin_users_update.php', { id, rol });
       if (!data.ok) alert(data.error || 'Error actualizando rol');
+      await loadUsers();
     }
 
     async function updateActive(id, checked){
       const activo = checked ? 1 : 0;
       const data = await postJSON('/Control-Acceso/api/admin_users_update.php', { id, activo });
       if (!data.ok) alert(data.error || 'Error actualizando activo');
+      await loadUsers();
     }
 
     async function resetPassPrompt(id, username){
