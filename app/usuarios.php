@@ -57,8 +57,8 @@ function usuario_admin_operar(PDO $pdo, array $actor, string $action, array $dat
       if ($count <= 1) throw new UsuarioOperacionError('Debe permanecer al menos un administrador activo.',409);
     }
     if ($action === 'delete') {
-      $used = $pdo->prepare('SELECT (SELECT COUNT(*) FROM registros_acceso WHERE operador_id=?) + (SELECT COUNT(*) FROM visitas WHERE operador_id=?)');
-      $used->execute([$id,$id]);
+      $used = $pdo->prepare('SELECT (SELECT COUNT(*) FROM registros_acceso WHERE operador_id=?) + (SELECT COUNT(*) FROM visitas WHERE operador_id=? OR operador_salida_id=?)');
+      $used->execute([$id,$id,$id]);
       if ((int)$used->fetchColumn() > 0) throw new UsuarioOperacionError('Esta cuenta tiene movimientos registrados. Desactívala para conservar la trazabilidad.',409);
       $pdo->prepare('DELETE FROM usuarios WHERE id=?')->execute([$id]);
     } elseif ($action === 'update') {

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/rut.php';
 require_once __DIR__ . '/../app/concurrencia.php';
 require_once __DIR__ . '/../app/puestos.php';
+require_once __DIR__.'/../app/entrada.php';
 
 require_api_roles(['ADMIN','CONTROL_VISITA'],['POST']);
 
@@ -25,13 +26,13 @@ try {
   $pdo = db();
   $data = input_data();
 
-  $nombre = trim($data['nombre'] ?? '');
-  $rut = rut_normalizar(trim($data['rut'] ?? ''));
-  $telefono = trim($data['telefono'] ?? '');
-  $modo = strtoupper(trim($data['modo'] ?? 'PEATONAL'));
-  $patente = strtoupper(trim($data['patente'] ?? ''));
+  $nombre = campo_texto($data['nombre'] ?? '', 'nombre',120,true);
+  $rut = rut_normalizar(campo_texto($data['rut'] ?? '', 'RUT',20,true));
+  $telefono = campo_texto($data['telefono'] ?? '', 'teléfono',20);
+  $modo = strtoupper(campo_texto($data['modo'] ?? 'PEATONAL','modo',10,true));
+  $patente = strtoupper(campo_texto($data['patente'] ?? '', 'patente',12));
   $puesto = PUESTO_VISITAS;
-  $motivo = trim($data['motivo'] ?? '');
+  $motivo = campo_texto($data['motivo'] ?? '', 'motivo',160);
 
   if ($nombre === '') {
     echo json_encode(['ok'=>false,'error'=>'Nombre es obligatorio'], JSON_UNESCAPED_UNICODE); exit;
@@ -71,6 +72,8 @@ try {
     ];
   });
   echo json_encode($response, JSON_UNESCAPED_UNICODE);
+} catch (InvalidArgumentException $error) {
+  http_response_code(422); echo json_encode(['ok'=>false,'error'=>$error->getMessage()],JSON_UNESCAPED_UNICODE);
 } catch (BloqueoRutOcupado $e) {
   http_response_code(409);
   echo json_encode(['ok'=>false,'error'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);

@@ -303,3 +303,12 @@ y el cierre de sesión solo admiten POST con token; las APIs responden JSON 401,
 intentos fallidos por usuario e IP cada diez minutos. Las contraseñas se
 restablecen en un diálogo con campo oculto. Prueba: `tests/sesiones_seguridad.php`.
 Referencia: [OWASP: sesiones](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
+### Control de visitas
+
+La vista inicial Dentro ahora incluye todas las visitas sin salida, aunque hayan
+ingresado otro día. Historial filtra por fecha de ingreso. Ambas vistas muestran
+total, páginas y última consulta; se actualizan cada 15 segundos. Se confirma la
+salida con nombre y RUT, y se guarda el operador de la sesión mediante una
+actualización condicional que no sobrescribe salidas previas. Los registros
+antiguos mantienen el operador desconocido como Sin registro. El CSV incluye los
+operadores de entrada y salida. Prueba: `tests/visitas_control.php`.

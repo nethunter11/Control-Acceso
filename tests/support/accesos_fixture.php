@@ -60,7 +60,7 @@ function qa_event(array $qa, string $rut, string $type, string $when, string $re
   return (int)$qa['pdo']->lastInsertId();
 }
 function qa_run(callable $test): void {
-  $qa = ['pdo'=>db(), 'sessions'=>[], 'staff'=>[], 'users'=>[], 'marker'=>'QA_ACCESOS_'.bin2hex(random_bytes(6))];
+  $qa = ['pdo'=>db(), 'sessions'=>[], 'visits'=>[], 'staff'=>[], 'users'=>[], 'marker'=>'QA_ACCESOS_'.bin2hex(random_bytes(6))];
   $before = $qa['pdo']->query('CHECKSUM TABLE funcionarios, registros_acceso, usuarios, visitas')->fetchAll(PDO::FETCH_KEY_PAIR);
   $failed = false;
   try {
@@ -80,6 +80,7 @@ function qa_run(callable $test): void {
     fwrite(STDERR, $error->getMessage()."\n");
     $failed = true;
   } finally {
+    foreach ($qa['visits'] as $id) $qa['pdo']->prepare('DELETE FROM visitas WHERE id=?')->execute([$id]);
     foreach ($qa['staff'] as $rut) {
       $qa['pdo']->prepare('DELETE FROM registros_acceso WHERE rut=?')->execute([$rut]);
       $qa['pdo']->prepare('DELETE FROM funcionarios WHERE rut=? AND nombres=?')->execute([$rut,$qa['marker']]);

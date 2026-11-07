@@ -22,8 +22,8 @@ try {
   $pdo = db();
   $data = input_data();
 
-  $id = intval($data['id'] ?? 0);
-  if ($id <= 0) {
+  $id = filter_var($data['id'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+  if ($id === false) {
     echo json_encode(['ok'=>false,'error'=>'ID inválido'], JSON_UNESCAPED_UNICODE); exit;
   }
 
@@ -31,10 +31,10 @@ try {
   $st2 = $pdo->prepare("
     UPDATE visitas
     SET fecha_hora_salida = NOW(),
-        estado = 'SALIO'
+        estado = 'SALIO', operador_salida_id = ?
     WHERE id = ? AND estado = 'DENTRO'
   ");
-  $st2->execute([$id]);
+  $st2->execute([(int)$u['id'],$id]);
 
   if ($st2->rowCount() !== 1) {
     $st = $pdo->prepare('SELECT estado FROM visitas WHERE id = ? LIMIT 1');
@@ -47,7 +47,7 @@ try {
     exit;
   }
 
-  echo json_encode(['ok'=>true,'resultado'=>'APROBADO','id'=>$id], JSON_UNESCAPED_UNICODE);
+  echo json_encode(['ok'=>true,'resultado'=>'APROBADO','id'=>$id,'operador_salida_id'=>(int)$u['id']], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
   http_response_code(500);

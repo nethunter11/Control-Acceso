@@ -46,8 +46,8 @@ function preparar_exportacion_csv(array $query): array {
       $sql .= ' ORDER BY r.fecha_hora, r.id';
       break;
     case 'visitas':
-      $columns = ['id','nombre','rut','telefono','modo','patente','puesto','operador_id','operador_entrada','motivo','fecha_hora_entrada','fecha_hora_salida','estado'];
-      $sql = 'SELECT v.id, v.nombre, v.rut, v.telefono, v.modo, v.patente, v.puesto, v.operador_id, u.username AS operador_entrada, v.motivo, v.fecha_hora_entrada, v.fecha_hora_salida, v.estado FROM visitas v LEFT JOIN usuarios u ON u.id=v.operador_id';
+      $columns = ['id','nombre','rut','telefono','modo','patente','puesto','operador_id','operador_entrada','operador_salida_id','operador_salida','motivo','fecha_hora_entrada','fecha_hora_salida','estado'];
+      $sql = 'SELECT v.id, v.nombre, v.rut, v.telefono, v.modo, v.patente, v.puesto, v.operador_id, u.username AS operador_entrada, v.operador_salida_id, us.username AS operador_salida, v.motivo, v.fecha_hora_entrada, v.fecha_hora_salida, v.estado FROM visitas v LEFT JOIN usuarios u ON u.id=v.operador_id LEFT JOIN usuarios us ON us.id=v.operador_salida_id';
       if ($day !== null) {
         if ($criterion === 'actividad') {
           $sql .= ' WHERE ((v.fecha_hora_entrada >= ? AND v.fecha_hora_entrada < ?) OR (v.fecha_hora_salida >= ? AND v.fecha_hora_salida < ?))';
