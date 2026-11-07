@@ -244,3 +244,13 @@ El punto anterior al rediseño está identificado por
 
 La configuración de la versión estable sigue en `app/db.php`. La preparación del
 entorno de pruebas se mantiene en la rama `pruebas`.
+
+### Historial de entradas y salidas
+
+El resumen empareja únicamente una entrada aprobada con la salida aprobada
+inmediatamente siguiente del mismo RUT, ordenando por fecha e ID. Cada rechazo
+se conserva por separado, incluidas las salidas rechazadas. Las salidas antiguas
+sin entrada y las entradas duplicadas permanecen visibles sin inventar parejas.
+Las fechas completas distinguen permanencias nocturnas; el filtro por día incluye
+la pareja si su entrada o su salida ocurrió ese día.
+Prueba: `C:\xampp\php\php.exe tests\historial.php` (requiere respaldo SQL verificado).

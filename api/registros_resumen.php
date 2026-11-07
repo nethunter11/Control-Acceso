@@ -3,100 +3,68 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/db.php';
 require_once __DIR__ . '/../app/auth.php';
 
-require_roles(['ADMIN','GUARDIA','AUDITOR']);
+require_api_roles(['ADMIN','GUARDIA','AUDITOR']);
 
 try {
-  $pdo = db();
-
   $rut = trim($_GET['rut'] ?? '');
-  $fecha = trim($_GET['fecha'] ?? ''); // YYYY-MM-DD
-  $resultado = trim($_GET['resultado'] ?? ''); // opcional
-  $limit = intval($_GET['limit'] ?? 50);
-  if ($limit < 1) $limit = 50;
-  if ($limit > 200) $limit = 200;
-
-  // Construimos filtros (se aplican sobre la ENTRADA)
+  $fecha = trim($_GET['fecha'] ?? '');
+  $resultado = trim($_GET['resultado'] ?? '');
+  $limit = max(1, min(200, intval($_GET['limit'] ?? 50)));
   $where = [];
   $params = [];
-
   if ($rut !== '') {
-    $where[] = "e.rut LIKE ?";
-    $params[] = "%" . $rut . "%";
+    $where[] = 'e.rut LIKE ?';
+    $params[] = '%' . $rut . '%';
   }
-
-  if ($fecha !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-  $where[] = "e.entrada >= ? AND e.entrada <= ?";
-  $params[] = $fecha . " 00:00:00";
-  $params[] = $fecha . " 23:59:59";
+  if ($fecha !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $fecha)) {
+    $where[] = '((e.fecha_hora >= ? AND e.fecha_hora <= ?) OR (s.fecha_hora >= ? AND s.fecha_hora <= ?))';
+    $params = array_merge($params, [$fecha.' 00:00:00', $fecha.' 23:59:59', $fecha.' 00:00:00', $fecha.' 23:59:59']);
   }
-
-
-  // Si quieres filtrar APROBADO/RECHAZADO en esta vista (normalmente será APROBADO)
-  if ($resultado !== '' && in_array($resultado, ['APROBADO','RECHAZADO'], true)) {
-    $where[] = "e.resultado = ?";
+  if (in_array($resultado, ['APROBADO','RECHAZADO'], true)) {
+    $where[] = 'e.resultado = ?';
     $params[] = $resultado;
   }
 
-  // Empareja ENTRADA #1 con SALIDA #1 por RUT (usando ROW_NUMBER)
-  // IMPORTANTE: esto asume tu regla de “no permitir doble ENTRADA/SALIDA aprobada” (alternancia).
+  // Solo dos movimientos aprobados consecutivos ENTRADA -> SALIDA forman una pareja.
+  // Los rechazos y las salidas antiguas sin entrada permanecen como filas individuales.
   $sql = "
-    WITH entradas AS (
-      SELECT
-        id,
-        rut,
-        modo,
-        puesto,
-        resultado,
-        motivo,
-        operador_id,
-        fecha_hora AS entrada,
-        ROW_NUMBER() OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS rn
-      FROM registros_acceso
-      WHERE tipo = 'ENTRADA'
-    ),
-    salidas AS (
-      SELECT
-        id,
-        rut,
-        operador_id,
-        fecha_hora AS salida,
-        ROW_NUMBER() OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS rn
-      FROM registros_acceso
-      WHERE tipo = 'SALIDA'
+    WITH aprobados AS (
+      SELECT id, tipo,
+        LAG(tipo) OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS anterior_tipo,
+        LEAD(tipo) OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS siguiente_tipo,
+        LEAD(id) OVER (PARTITION BY rut ORDER BY fecha_hora, id) AS siguiente_id
+      FROM registros_acceso WHERE resultado = 'APROBADO'
+    ), filas AS (
+      SELECT id, CASE WHEN tipo = 'ENTRADA' AND siguiente_tipo = 'SALIDA' THEN siguiente_id END AS salida_id,
+        CASE WHEN siguiente_tipo = 'ENTRADA' AND tipo = 'ENTRADA' THEN 'Entrada seguida de otra entrada aprobada'
+             WHEN tipo = 'SALIDA' THEN 'Salida sin entrada consecutiva registrada' END AS incidencia
+      FROM aprobados
+      WHERE tipo = 'ENTRADA' OR (tipo = 'SALIDA' AND COALESCE(anterior_tipo, '') <> 'ENTRADA')
+      UNION ALL
+      SELECT id, NULL, NULL FROM registros_acceso WHERE resultado = 'RECHAZADO'
     )
-    SELECT
+    SELECT e.id, e.tipo AS tipo_movimiento, e.fecha_hora AS fecha_movimiento,
       e.rut,
-      DATE_FORMAT(e.entrada, '%H:%i:%s') AS entrada,
-      DATE_FORMAT(s.salida,  '%H:%i:%s') AS salida,
-      e.modo,
-      e.puesto,
-      e.resultado,
-      e.motivo,
-      e.operador_id AS operador_entrada_id,
-      s.operador_id AS operador_salida_id,
-      ue.username AS operador_entrada,
-      us.username AS operador_salida,
-      e.entrada AS _orden
-    FROM entradas e
-    LEFT JOIN salidas s
-      ON s.rut = e.rut AND s.rn = e.rn
+      CASE WHEN e.tipo = 'ENTRADA' THEN e.fecha_hora END AS entrada,
+      CASE WHEN e.tipo = 'SALIDA' THEN e.fecha_hora ELSE s.fecha_hora END AS salida,
+      e.modo, e.puesto, s.puesto AS puesto_salida, e.resultado, e.motivo, filas.incidencia,
+      CASE WHEN e.tipo = 'ENTRADA' THEN e.operador_id END AS operador_entrada_id,
+      CASE WHEN e.tipo = 'SALIDA' THEN e.operador_id ELSE s.operador_id END AS operador_salida_id,
+      CASE WHEN e.tipo = 'ENTRADA' THEN ue.username END AS operador_entrada,
+      CASE WHEN e.tipo = 'SALIDA' THEN ue.username ELSE us.username END AS operador_salida
+    FROM filas
+    INNER JOIN registros_acceso e ON e.id = filas.id
+    LEFT JOIN registros_acceso s ON s.id = filas.salida_id
     LEFT JOIN usuarios ue ON ue.id = e.operador_id
     LEFT JOIN usuarios us ON us.id = s.operador_id
   ";
-
-  if (count($where) > 0) {
-    $sql .= " WHERE " . implode(" AND ", $where);
-  }
-
-  $sql .= " ORDER BY _orden DESC LIMIT " . $limit;
-
-  $st = $pdo->prepare($sql);
+  if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+  $sql .= ' ORDER BY e.fecha_hora DESC, e.id DESC LIMIT ' . $limit;
+  $st = db()->prepare($sql);
   $st->execute($params);
-  $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-
-  echo json_encode(['ok' => true, 'items' => $rows], JSON_UNESCAPED_UNICODE);
-
-} catch (Throwable $e) {
+  echo json_encode(['ok'=>true, 'items'=>$st->fetchAll()], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $error) {
   http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+  error_log('Historial de accesos: ' . $error->getMessage());
+  echo json_encode(['ok'=>false, 'error'=>'No se pudo consultar el historial.'], JSON_UNESCAPED_UNICODE);
 }

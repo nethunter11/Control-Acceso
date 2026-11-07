@@ -22,10 +22,10 @@ $activePage = 'registros';
       <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
       <div class="card card-dark">
-        <div class="card-header card-header-dark"><div class="d-flex align-items-center justify-content-between"><div><h2 class="h6 mb-0">Historial de movimientos</h2><div class="text-muted small">Filtra por fecha, RUT y resultado de la validación.</div></div><button id="btnRegRefresh" class="btn btn-sm btn-outline-light" onclick="cargarUltimos()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div>
+        <div class="card-header card-header-dark"><div class="d-flex align-items-center justify-content-between"><div><h2 class="h6 mb-0">Historial de movimientos</h2><div class="text-muted small">Incluye entradas y salidas del día. Los rechazos se muestran por separado.</div></div><button id="btnRegRefresh" class="btn btn-sm btn-outline-light" onclick="cargarUltimos()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div>
         <div class="card-body">
           <div class="row g-3 align-items-end">
-            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_fecha">Fecha</label><input id="f_fecha" type="date" class="form-control form-control-dark"></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_fecha">Día del movimiento</label><input id="f_fecha" type="date" class="form-control form-control-dark"></div>
             <div class="col-12 col-sm-6 col-xl-3"><label class="form-label" for="f_rut">RUT</label><input id="f_rut" class="form-control form-control-dark" placeholder="12345678-5" autocomplete="off"></div>
             <div class="col-12 col-sm-6 col-xl-3">
               <div class="form-label" id="resultFilterLabel">Resultado</div>
@@ -100,7 +100,7 @@ $activePage = 'registros';
       <table class="table table-dark table-hover align-middle mb-0">
         <thead>
           <tr>
-            <th>RUT</th><th>Entrada</th><th>Operador entrada</th><th>Salida</th><th>Operador salida</th><th>Modo</th><th>Puesto</th><th>Resultado</th><th>Motivo</th>
+            <th>RUT</th><th>Movimiento</th><th>Entrada</th><th>Operador entrada</th><th>Salida</th><th>Operador salida</th><th>Modo</th><th>Puesto</th><th>Resultado</th><th>Motivo</th>
           </tr>
         </thead><tbody>`;
 
@@ -113,19 +113,20 @@ $activePage = 'registros';
 
         html += `<tr>
         <td>${escapeHtml(r.rut)}</td>
-        <td>${escapeHtml(r.entrada || '')}</td>
-        <td>${escapeHtml(r.operador_entrada || 'Sin registro')}</td>
-        <td>${escapeHtml(r.salida || '')}</td>
+        <td>${r.entrada && r.salida ? 'Entrada / salida' : escapeHtml(r.tipo_movimiento === 'SALIDA' ? 'Salida' : 'Entrada')}</td>
+        <td>${escapeHtml(r.entrada || '—')}</td>
+        <td>${escapeHtml(r.entrada ? (r.operador_entrada || 'Sin registro') : '—')}</td>
+        <td>${escapeHtml(r.salida || '—')}</td>
         <td>${escapeHtml(r.salida ? (r.operador_salida || 'Sin registro') : '—')}</td>
         <td>${escapeHtml(modoLabel)}</td>
         <td>${escapeHtml(r.puesto || '')}</td>
         <td>${badge}</td>
-        <td class="text-muted">${escapeHtml(r.motivo || '')}</td>
+        <td class="text-muted">${escapeHtml(r.motivo || r.incidencia || '')}</td>
         </tr>`;
 
       }
 
-      if (rows.length === 0) html += "<tr><td colspan=\"9\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No hay movimientos que coincidan con los filtros.</div></td></tr>";
+      if (rows.length === 0) html += "<tr><td colspan=\"10\"><div class=\"table-empty\"><i class=\"bi bi-inbox\" aria-hidden=\"true\"></i>No hay movimientos que coincidan con los filtros.</div></td></tr>";
       html += `</tbody></table></div>`;
       document.getElementById('tabla').innerHTML = html;
     } catch (err) {
