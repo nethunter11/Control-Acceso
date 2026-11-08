@@ -19,7 +19,6 @@ $activePage = 'reportes';
   <main class="main" id="mainContent" tabindex="-1">
     <?php include __DIR__ . '/partials/topbar.php'; ?>
     <section class="content">
-      <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
       <div class="card card-dark mb-4">
         <div class="card-header card-header-dark"><h2 class="h6 mb-0">Periodo de consulta</h2><div class="text-muted small">Indicadores de entradas aprobadas y rechazadas.</div></div>

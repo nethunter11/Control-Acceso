@@ -19,7 +19,6 @@ $activePage = 'visitas';
   <main class="main" id="mainContent" tabindex="-1">
     <?php include __DIR__ . '/partials/topbar.php'; ?>
     <section class="content">
-      <?php include __DIR__ . '/partials/page-heading.php'; ?>
 
       <div class="visits-layout">
         <div class="card card-dark">

@@ -17,7 +17,6 @@ $activePage='funcionarios';
 <main class="main" id="mainContent" tabindex="-1">
 <?php include __DIR__.'/partials/topbar.php'; ?>
 <section class="content">
-<?php include __DIR__.'/partials/page-heading.php'; ?>
 <div class="row g-3">
   <div class="col-12 col-xl-6">
     <section class="card card-dark h-100">

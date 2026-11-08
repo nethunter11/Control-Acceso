@@ -1,11 +1,23 @@
 <?php
 require_once __DIR__ . '/../app/auth.php';
 $u = auth_user();
+$sectionTitle = [
+  'validacion'=>'Validación',
+  'visitas'=>'Visitas',
+  'funcionarios'=>'Funcionarios',
+  'registros'=>'Registros',
+  'reportes'=>'Reportes',
+  'config'=>'Configuración',
+  'config_gestion'=>'Gestión',
+  'config_sistema'=>'Sistema',
+  'config_exportaciones'=>'Exportaciones',
+][$activePage ?? ''] ?? 'Control de acceso';
+
 $roleLabel = ['ADMIN'=>'Administrador','GUARDIA'=>'Guardia','CONTROL_VISITA'=>'Control de visitas','AUDITOR'=>'Auditor'][$u['rol'] ?? ''] ?? 'Usuario';
 ?>
 <header class="topbar">
   <button class="btn-icon" id="btnToggle" type="button" aria-label="Contraer menú" title="Contraer menú" aria-controls="sidebar" aria-expanded="true"><i class="bi bi-list" aria-hidden="true"></i></button>
-  <div class="topbar-context"><span>Control de acceso</span><time id="topbarDate"></time></div>
+  <div class="topbar-context"><h1><?= htmlspecialchars($sectionTitle, ENT_QUOTES, 'UTF-8') ?></h1><time id="topbarDate"></time></div>
   <?php if (($activePage ?? '') === 'registros'): ?>
     <div class="topbar-search">
       <i class="bi bi-search" aria-hidden="true"></i>

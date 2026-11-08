@@ -95,7 +95,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-icon:hover { background: var(--panel3); color: var(--text); border-color: var(--border); }
 .btn-icon i { font-size: 20px; line-height: 1; }
 .topbar-context { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-.topbar-context > span { font-size: 13px; font-weight: 600; }
+.topbar-context > h1 { margin: 0; font-size: 13px; line-height: 1.55; font-weight: 600; }
 .topbar-context time { font-size: 11px; color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 .contrast-toggle { font-size: 12px; padding-inline: 10px; }
@@ -112,12 +112,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .logout-btn { display: flex; gap: 8px; align-items: center; min-height: 44px; padding: 10px 12px; color: var(--muted); font-size: 13px; text-decoration: none; border-radius: 8px; border: 1px solid var(--border); }
 .logout-btn:hover { color: var(--text); background: var(--panel3); }
 .content { max-width: 1800px; margin: 0 auto; padding: 30px; }
-.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
 .page-eyebrow { margin-bottom: 7px; color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px; font-weight: 700; }
-.page-heading h1 { margin: 0; font-size: clamp(24px, 2vw, 30px); line-height: 1.25; font-weight: 650; letter-spacing: -.7px; }
-.page-heading p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
-.institution-tag { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 11px; }
-.institution-tag i { color: var(--accent); }
 .card-dark { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .card-header-dark { background: transparent; border-bottom: 1px solid var(--border); color: var(--text); padding: 20px 24px; }
 .card-header-dark .h6 { font-size: 15px; font-weight: 650; }
@@ -254,7 +249,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 @media (max-width: 767px) {
   .topbar { min-height: 72px; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
-  .topbar-context > span { font-size: 12px; }
+  .topbar-context > h1 { font-size: 12px; }
   .topbar-context time { font-size: 10px; }
   .topbar-search { order: 3; max-width: none; flex-basis: 100%; }
   .topbar-right { gap: 6px; }
@@ -264,8 +259,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .logout-btn { min-width: 40px; justify-content: center; padding: 10px; border: 0; }
   .contrast-toggle { padding: 8px; }
   .content { padding: 22px 16px; }
-  .page-heading { margin-bottom: 22px; }
-  .institution-tag { display: none; }
   .card-header-dark { padding: 18px; }
   .card-body { padding: 18px; }
   .kpi-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }

@@ -13,7 +13,6 @@ $activePage='registros';
 <?php include __DIR__.'/partials/sidebar.php'; ?>
 <main class="main" id="mainContent" tabindex="-1">
 <?php include __DIR__.'/partials/topbar.php'; ?><section class="content">
-<?php include __DIR__.'/partials/page-heading.php'; ?>
 <section class="card card-dark">
 <div class="card-header card-header-dark"><div class="d-flex align-items-center justify-content-between gap-3"><div><h2 class="h6 mb-0">Historial de movimientos</h2><div class="small text-muted">Incluye parejas con entrada o salida en el periodo. Los rechazos se muestran por separado.</div></div><button id="btnRegRefresh" type="button" class="btn btn-outline-light" onclick="cargarUltimos()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div>
 <div class="card-body">

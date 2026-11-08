@@ -29,4 +29,3 @@ if (!isset($configMeta[$activePage ?? ''])) { http_response_code(404); exit; }
   <main class="main" id="mainContent" tabindex="-1">
     <?php include __DIR__.'/topbar.php'; ?>
     <section class="content">
-      <?php include __DIR__.'/page-heading.php'; ?>
