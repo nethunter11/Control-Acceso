@@ -109,8 +109,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .user-details { display: flex; flex-direction: column; max-width: 155px; }
 .user-name { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-role { font-size: 11px; color: var(--muted); }
-.logout-btn { display: flex; gap: 8px; align-items: center; min-height: 44px; padding: 10px 12px; color: var(--muted); font-size: 13px; text-decoration: none; border-radius: 8px; border: 1px solid var(--border); }
-.logout-btn:hover { color: var(--text); background: var(--panel3); }
+.logout-btn { display: flex; gap: 8px; align-items: center; min-height: 44px; padding: 10px 12px; color: #fff; background: #b52e3c; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #d84b59; transition: background-color .15s ease, border-color .15s ease; }
+.logout-btn:hover { color: #fff; background: #ca3b49; border-color: #ef6a76; }
+.logout-btn:active { background: #982333; border-color: #b52e3c; }
 .content { max-width: 1800px; margin: 0 auto; padding: 30px; }
 .page-eyebrow { margin-bottom: 7px; color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px; font-weight: 700; }
 .card-dark { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }

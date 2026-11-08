@@ -139,28 +139,29 @@ requieren una sesión de administrador; la dirección anterior
 - `configuracion/exportaciones.php`: descarga de listados CSV.
 
 Para descargar registros, abre **Exportaciones**, elige **Registros de acceso** o
-**Registros de visitas**, selecciona **Un día** y la fecha, y pulsa **Descargar CSV**.
-También puedes elegir **Todos los registros**. Funcionarios y usuarios se exportan
-como listados completos; el archivo de usuarios no contiene contraseñas ni sus
-hashes. Estas descargas requieren una sesión de administrador.
+**Registros de visitas** y selecciona **Un día** o **Rango de días**. En un rango,
+completa **Desde** y **Hasta** y pulsa **Descargar CSV**. Se incluyen ambos días
+completos en horario de Chile. El rango puede ser de un solo día; no se aceptan
+fechas incompletas, invertidas ni descargas de movimientos sin un periodo elegido.
+Funcionarios y usuarios se exportan como listados completos; el archivo de usuarios
+no contiene contraseñas ni sus hashes. Todas las descargas requieren ADMIN.
 
-En visitas puedes filtrar por **Solo ingresos del día**, **Solo salidas del día** o
-**Ingresos o salidas del día**. Esta última opción incluye una visita una sola vez
-si ingresó o salió en la fecha elegida, aunque la otra actividad ocurriera otro día.
-Una visita que permaneció dentro todo el día sin ingresar ni salir ese día no se
-incluye con ese criterio. Accesos usa la fecha de cada movimiento.
+En visitas puedes filtrar por **Solo ingresos del periodo**, **Solo salidas del
+periodo** o **Ingresos o salidas del periodo**. Esta última opción incluye una
+visita una sola vez si ingresó o salió dentro de las fechas elegidas. Una visita
+que permaneció dentro todo el periodo sin ingresar ni salir no se incluye con ese
+criterio. Accesos usa la fecha de cada movimiento.
 
-Los archivos incluyen encabezados aunque el filtro no encuentre registros, usan
-UTF-8 para conservar tildes en Excel y llevan la fecha en su nombre cuando se
-filtran por día. Los CSV incorporan el nombre del operador registrado; en visitas
-corresponde al operador de ingreso. Los registros antiguos sin operador dejan esa
-celda vacía.
+Los archivos incluyen encabezados aunque no haya resultados, usan UTF-8 y llevan
+el día o las dos fechas del rango en su nombre. Los CSV incorporan el nombre del
+operador registrado; visitas incluye los operadores de entrada y salida. Los
+registros antiguos sin operador dejan esa celda vacía.
 
 Los textos que pueden interpretarse como fórmulas al abrir el CSV se prefijan con
 un tabulador, incluidos teléfonos que empiezan con `+`. Esto permite tratarlos como
 texto en Excel; si procesas el archivo con otro programa, considera ese prefijo.
 
-`C:\xampp\php\php.exe tests\exportaciones.php` verifica filtros diarios y completos,
+`C:\xampp\php\php.exe tests\exportaciones.php` verifica filtros diarios y por rango,
 límites de medianoche, visitas entre días, permisos y contenido de los CSV. Requiere
 el servidor de pruebas y un respaldo SQL con restauración comprobada. Retira sus
 datos temporales y verifica el contenido de las cuatro tablas al terminar.
@@ -381,3 +382,23 @@ Pruebas: `tests/tablas_busquedas.php`, `node tests/ui_tablas.js` y
 81 visitas temporales, incluidos empates de fecha, filtros por puesto de salida,
 búsquedas vacías y recuperación de páginas fuera del rango. Las pruebas de
 interfaz usan elementos simulados; revisa la apariencia en el navegador.
+## Versión oficial del 7 de noviembre de 2026
+
+La versión revisada se publica en `main` y se identifica con la etiqueta
+`version-oficial-2026-11-07`. Incluye las mejoras de acceso, visitas, funcionarios,
+sesiones, tablas y exportaciones por día o rango, junto con la interfaz aprobada.
+
+La carpeta oficial y su base de datos siguen siendo `Control-Acceso` y
+`control_acceso`. Las pruebas conservan su carpeta y base separadas. La integración
+requiere respaldar ambas bases, verificar una restauración temporal y ensayar las
+migraciones antes de aplicarlas a la oficial. No se importan registros de pruebas.
+
+Las migraciones solo agregan control de versión de sesión y operador de salida de
+visitas, además de su tabla de seguimiento. Tras respaldar y verificar SQL, desde
+la carpeta oficial se ejecuta `C:\xampp\php\php.exe tools\migrar-estable.php --aplicar`.
+El comando de pruebas continúa siendo `tools/migrar-pruebas.php`. Ambos registran
+las migraciones aplicadas y evitan ejecutarlas simultáneamente.
+
+Después de la actualización, recarga con Ctrl + F5 e inicia sesión nuevamente.
+Los usuarios y sus contraseñas se conservan; los movimientos anteriores sin
+operador de salida siguen mostrándose sin atribuir una identidad.

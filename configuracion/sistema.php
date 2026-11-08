@@ -78,7 +78,7 @@ include __DIR__.'/../partials/config-header.php';
     <section class="system-panel">
       <div class="system-panel-heading"><h2>Avisos de lectura</h2><i class="bi bi-info-circle" aria-hidden="true"></i></div>
       <ul class="system-notices" id="systemNotices"><li>Consultando el estado del equipo.</li></ul>
-      <p class="system-footnote">Los porcentajes representan el uso del equipo completo. Los valores ausentes se muestran como no disponibles.</p>
+      <p class="system-footnote">Los porcentajes representan el uso del equipo completo.</p>
     </section>
   </div>
 </div>

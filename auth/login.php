@@ -27,14 +27,16 @@ $err = is_string($_GET['err'] ?? null) ? $_GET['err'] : '';
   </div>
   <main class="login-shell" id="mainContent">
     <section class="login-identity" aria-label="Control de acceso institucional">
-      <div class="login-brand"><img src="/Control-Acceso/img/logo.png" alt="Escudo institucional FACH"><div><div class="login-brand-name">Fuerza Aérea de Chile</div><div class="login-brand-sub">Sistema institucional</div></div></div>
+      <div class="login-brand"><img src="/Control-Acceso/img/logo.png" alt="Escudo institucional de la Fuerza Aérea de Chile" width="150" height="265"></div>
       <div class="login-intro">
-        <div class="page-eyebrow">Panel operativo</div>
-        <h1>Control de acceso<span>.</span></h1>
-        <p>Registro y validación de funcionarios y visitas, en un solo lugar.</p>
-        <div class="login-capabilities"><span><i class="bi bi-shield-check" aria-hidden="true"></i>Validación</span><span><i class="bi bi-people" aria-hidden="true"></i>Visitas</span><span><i class="bi bi-journal-text" aria-hidden="true"></i>Registros</span></div>
+        <h1>Control de acceso</h1>
+        <p>Ingreso autorizado para operadores y administradores.</p>
+        <div class="login-capabilities" aria-label="Funciones del sistema">
+          <span><i class="bi bi-shield-check" aria-hidden="true"></i>Validación</span>
+          <span><i class="bi bi-people" aria-hidden="true"></i>Visitas</span>
+          <span><i class="bi bi-journal-text" aria-hidden="true"></i>Registros</span>
+        </div>
       </div>
-      <div class="login-identity-footer"><span class="login-rule"></span>Acceso para personal autorizado</div>
     </section>
     <section class="login-form-panel" aria-labelledby="loginTitle">
       <div class="login-form-icon"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i></div>

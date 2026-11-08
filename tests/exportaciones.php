@@ -110,6 +110,7 @@ try {
   $previous = $day->modify('-1 day')->format('Y-m-d');
   $next = $day->modify('+1 day')->format('Y-m-d');
   $emptyDay = $day->modify('+10 days')->format('Y-m-d');
+  $after = $day->modify('+2 days')->format('Y-m-d');
   $date = $day->format('Y-m-d');
   $checkDates = $pdo->prepare('SELECT (SELECT COUNT(*) FROM registros_acceso WHERE fecha_hora>=? AND fecha_hora<?) + (SELECT COUNT(*) FROM visitas WHERE (fecha_hora_entrada>=? AND fecha_hora_entrada<?) OR (fecha_hora_salida>=? AND fecha_hora_salida<?))');
   $rangeStart = $previous . ' 00:00:00';
@@ -122,7 +123,7 @@ try {
   $pdo->prepare("INSERT INTO funcionarios (rut,nombres,estado) VALUES (?,?,'ACTIVO')")->execute([$rut,$staffName]);
   $createdStaff = true;
   $accessInsert = $pdo->prepare("INSERT INTO registros_acceso (rut,tipo,modo,fecha_hora,puesto,operador_id,resultado,motivo) VALUES (?,?,'PEATONAL',?,'Pórtico Norte',?,'APROBADO',?)");
-  $accessTimes = [$previous.' 23:59:59',$date.' 00:00:00',$date.' 23:59:59',$next.' 00:00:00'];
+  $accessTimes = [$previous.' 23:59:59',$date.' 00:00:00',$date.' 23:59:59',$next.' 00:00:00',$next.' 23:59:59',$after.' 00:00:00'];
   $multiline = "Línea uno, con coma\n\"Tildes: áéíóúñ\"";
   foreach ($accessTimes as $index=>$time) {
     $accessInsert->execute([$rut,$index%2===0?'ENTRADA':'SALIDA',$time,$operators['ADMIN']['id'],$index===1?$multiline:'=1+1']);
@@ -137,6 +138,8 @@ try {
     [$next.' 00:00:00',null],
     [$date.' 14:00:00',null],
     [$previous.' 21:00:00',$date.' 23:59:59'],
+    [$next.' 23:59:59',$after.' 00:00:00'],
+    [$after.' 00:00:00',null],
   ];
   foreach ($visitTimes as [$entry,$exit]) {
     $visitInsert->execute([$marker,$rut,'+56 9 1234 5678',$operators['ADMIN']['id'],$multiline,$entry,$exit,$exit===null?'DENTRO':'SALIO']);
@@ -162,21 +165,48 @@ try {
     }
     echo "OK: visitas por día con criterio {$criterion}, incluidos cruces de medianoche\n";
   }
+
+  $accessRange=export_csv($fixtures['ADMIN'],['table'=>'registros_acceso','desde'=>$date,'hasta'=>$next]);
+  export_assert(array_map(fn($row)=>(int)$row['id'],$accessRange['rows'])===array_slice($accessIds,1,4),'El rango de accesos no incluye ambos días completos o incluye el siguiente.');
+  export_assert(str_contains($accessRange['headers']['content-disposition'] ?? '',$date.'_a_'.$next),'El nombre del archivo no identifica el rango.');
+  $sameDay=export_csv($fixtures['ADMIN'],['table'=>'registros_acceso','desde'=>$date,'hasta'=>$date]);
+  export_assert($sameDay['rows']===$access['rows'],'Un rango de un día no equivale al filtro diario.');
+  foreach(['actividad'=>[0,1,2,3,4,5,6,7],'entrada'=>[1,2,4,5,7],'salida'=>[0,1,2,3,6]] as $criterion=>$indexes){
+    $ranged=export_csv($fixtures['ADMIN'],['table'=>'visitas','desde'=>$date,'hasta'=>$next,'criterio'=>$criterion]);
+    $actual=array_map(fn($row)=>(int)$row['id'],$ranged['rows']);
+    $expected=array_map(fn($index)=>$visitIds[$index],$indexes);sort($actual);sort($expected);
+    export_assert($actual===$expected && count(array_unique($actual))===count($actual),'El rango de visitas falla para el criterio '.$criterion);
+  }
+  $emptyRange=export_csv($fixtures['ADMIN'],['table'=>'registros_acceso','desde'=>$emptyDay,'hasta'=>$emptyDay]);
+  export_assert($emptyRange['rows']===[] && count($emptyRange['columns'])>0,'El rango vacío no conserva sus encabezados.');
+  echo "OK: rangos inclusivos, último segundo, medianoche siguiente, mismo día y visitas sin duplicados\n";
+
   $defaultVisits = export_csv($fixtures['ADMIN'],['table'=>'visitas','fecha'=>$date]);
   export_assert(count($defaultVisits['rows'])===5,'El criterio inicial de visitas no incluye ingresos o salidas.');
   foreach (['registros_acceso','visitas'] as $table) {
     $empty = export_csv($fixtures['ADMIN'],['table'=>$table,'fecha'=>$emptyDay]);
     export_assert(count($empty['rows'])===0 && count($empty['columns'])>0,'Un día sin resultados no conserva sus encabezados.');
-    export_csv($fixtures['ADMIN'],['table'=>$table]);
+    $bounded=export_csv($fixtures['ADMIN'],['table'=>$table,'desde'=>$previous,'hasta'=>$after]);
+    export_assert(count($bounded['rows'])===($table==='registros_acceso'?count($accessIds):count($visitIds)),'El rango amplio pierde registros.');
   }
   $users = export_csv($fixtures['ADMIN'],['table'=>'usuarios']);
   export_assert($users['columns']===['id','username','rol','activo'],'La exportación de usuarios incluye datos de contraseña.');
   $staff = export_csv($fixtures['ADMIN'],['table'=>'funcionarios']);
   $staffRow = array_values(array_filter($staff['rows'],fn($row)=>$row['rut']===$rut));
   export_assert(count($staffRow)===1 && $staffRow[0]['nombres']==="\t".$staffName,'No se protegió el texto de nombre que comienza como fórmula.');
-  echo "OK: exportaciones completas, días vacíos con encabezados y usuarios sin contraseñas\n";
+  echo "OK: rangos amplios, días vacíos con encabezados y usuarios sin contraseñas\n";
 
   $badParams = [
+    ['table'=>'registros_acceso'],['table'=>'visitas'],
+    ['table'=>'registros_acceso','desde'=>$date],['table'=>'visitas','hasta'=>$date],
+    ['table'=>'registros_acceso','desde'=>$next,'hasta'=>$date],
+    ['table'=>'visitas','desde'=>'2001-02-30','hasta'=>$next],
+    ['table'=>'visitas','desde'=>'','hasta'=>$next],
+    ['table'=>'registros_acceso','desde'=>[$date],'hasta'=>$next],
+    ['table'=>'visitas','desde'=>$date,'hasta'=>[$next]],
+    ['table'=>'registros_acceso','fecha'=>$date,'desde'=>$date,'hasta'=>$next],
+    ['table'=>'funcionarios','desde'=>$date,'hasta'=>$next],
+
     ['table'=>'desconocida'],['table'=>['usuarios']],
     ['table'=>'registros_acceso','fecha'=>'2001-02-30'],['table'=>'visitas','fecha'=>''],
     ['table'=>'registros_acceso','fecha'=>['2001-02-03']],['table'=>'visitas','fecha'=>'0999-01-01'],
@@ -197,7 +227,7 @@ try {
   foreach ([
     'gestion'=>['usersTable','nu_username','nu_password','nu_rol','nu_activo'],
     'sistema'=>['systemChart','cpuValue','ramValue','temperatureValue','systemRecent'],
-    'exportaciones'=>['csvTable','csvDate','csvPeriod','csvCriterion','csvForm']
+    'exportaciones'=>['csvTable','csvDate','csvFrom','csvTo','csvPeriod','csvCriterion','csvForm']
   ] as $section=>$ids) {
     $settings = export_request($fixtures['ADMIN'],'configuracion/'.$section.'.php');
     $dom = new DOMDocument();
@@ -206,6 +236,9 @@ try {
     export_assert($settings['status']===200 && $xpath->query('//*[@id="settingsAccordion"]')->length===0,'La sección no es una pantalla independiente: '.$section);
     export_assert($xpath->query('//*[@id="configSubmenu"]/a')->length===3,'Faltan opciones del submenú de Configuración.');
     export_assert($xpath->query('//*[@id="configSubmenu"]/a[@aria-current="page"]')->length===1,'No se identifica la sección seleccionada.');
+    if($section==='exportaciones') {
+      export_assert($xpath->query('//*[@id="csvPeriod"]/option[@value="todos"]')->length===0 && $xpath->query('//*[@id="csvPeriod"]/option[@value="rango"]')->length===1,'No se reemplazó Todos los registros por Rango de días.');
+    }
     foreach($ids as $id)export_assert($xpath->query('//*[@id="'.$id.'"]')->length===1,'Falta un control de '.$section.': '.$id);
   }
   $legacy=export_request($fixtures['ADMIN'],'configuraciones.php');
