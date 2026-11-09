@@ -35,17 +35,25 @@ async function comprobarAdministracion(sources,runtime) {
   {
     const {document,element}=dom(); const timers=new Map();let timerId=0;
     const window={events:{},addEventListener(name,fn){this.events[name]=fn;}};
-    const calls=[],confirmations=[];
-    let rows=[{id:1,rut:'12345678-5',nombre:'<img>Persona',estado:'DENTRO',fecha_hora_entrada:'2001-02-03 23:00:00',operador_entrada:null,operador_salida:null}];
+    const calls=[],confirmations=[],popups=[];
+    let allowExit=false,rejectExit=false,popupOpen=false;
+    let rows=[{id:1,rut:'12345678-5',nombre:'<img>Persona',telefono:'+56 9 1234 5678',modo:'VEHICULO',patente:'BB1234',estado:'DENTRO',fecha_hora_entrada:'2001-02-03 23:00:00',operador_entrada:null,operador_salida:null}];
     const fetch=async(url,init={})=>{
       calls.push({url,init});
-      if(init.method==='POST'){rows=[];return{ok:true,json:async()=>({ok:true,resultado:'APROBADO'})};}
+      if(init.method==='POST'){
+        if(url.endsWith('visitas_entrada.php')){
+          const saved=JSON.parse(init.body);rows=[];
+          return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',nombre:saved.nombre,rut:'12345678-5',telefono:saved.telefono,modo:saved.modo,patente:saved.patente,fecha_hora_entrada:'2026-11-09 12:34:56'})};
+        }
+        if(rejectExit)return{ok:true,json:async()=>({ok:true,resultado:'RECHAZADO',motivo:'La visita ya tiene salida registrada.',guardado:false})};
+        rows=[];return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',fecha_hora_salida:'2026-11-09 13:45:56'})};
+      }
       return{ok:true,json:async()=>({ok:true,items:rows,total:rows.length,page:1,pages:1,dentro:rows.length,checked_at:'2026-11-07 23:00:00'})};
     };
     element('f_fecha').value='2026-11-07';
-    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile','Tablas',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida};')(
+    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile','Tablas','RegistroPopup',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida,entry:registrarEntrada,mode:setModoV};')(
       window,document,fetch,runtime.URLSearchParams,runtime.AbortController,(fn,delay)=>{timers.set(++timerId,{fn,delay});return timerId;},id=>timers.delete(id),
-      {confirmar:async(title,text)=>{confirmations.push(text);return true;}},{hoy:()=>'2026-11-07'},tablesFor(document));
+      {confirmar:async(title,text)=>{confirmations.push(text);return allowExit;}},{hoy:()=>'2026-11-07'},tablesFor(document),{abierta:()=>popupOpen,mostrar:data=>{popups.push(data);return Promise.resolve();}});
     await api.view('dentro');
     check(!calls.at(-1).url.includes('fecha=') && element('f_fecha').disabled,'Dentro ahora filtra por el día.');
     check(element('tabla').innerHTML.includes('2001-02-03') && element('tabla').innerHTML.includes('&lt;img&gt;') && !element('tabla').innerHTML.includes('<img>'),'Fecha antigua o escape HTML incorrecto.');
@@ -53,14 +61,32 @@ async function comprobarAdministracion(sources,runtime) {
     await api.view('historial');
     check(calls.at(-1).url.includes('fecha=2026-11-07') && !element('f_fecha').disabled,'El historial no filtra por fecha.');
     await api.exit(1);
+    check(!calls.some(call=>call.init.method==='POST') && popups.length===0 && !element('btnSalidaVisita_1').disabled,'Cancelar una salida guarda un movimiento, abre un resultado o deja bloqueado el botón.');
+    popupOpen=true;const before=calls.length;await api.exit(1);
+    check(calls.length===before && confirmations.length===1,'Se inicia otra salida mientras hay un aviso abierto.');
+    popupOpen=false;allowExit=true;rejectExit=true;await api.exit(1);
+    check(popups.at(-1).tono==='rechazo' && !popups.at(-1).fecha && !element('btnSalidaVisita_1').disabled,'Una salida rechazada parece aprobada, inventa una hora o bloquea el botón.');
+    popups.length=0;rejectExit=false;
+    await Promise.all([api.exit(1),api.exit(1)]);
+    check(calls.filter(call=>call.url.endsWith('visitas_salida.php')).length===2,'La doble pulsación duplica la salida.');
+    check(popups.length===1 && popups[0].tono==='salida' && popups[0].estado==='Fuera del recinto' && popups[0].fecha==='2026-11-09 13:45:56','La salida de visita no muestra el popup con el estado y la hora guardada.');
+    check(popups[0].nombre==='<img>Persona' && popups[0].rut==='12345678-5' && popups[0].campos.some(([label,value])=>label==='Patente' && value==='BB1234'),'La salida pierde la identidad o los datos del vehículo.');
+    popups.length=0;
     check(confirmations[0].includes('12345678-5') && confirmations[0].includes('Persona'),'La salida no identifica a la visita.');
     check(calls.some(call=>call.init.method==='POST' && JSON.parse(call.init.body).id===1),'No se registra la salida.');
+    element('v_nombre').value='<img>Nueva visita';element('v_rut').value='12.345.678-5';element('v_tel').value='+56 9 1234 5678';
+    api.mode('VEHICULO');element('v_pat').value='AA1234';
+    await Promise.all([api.entry(),api.entry()]);
+    check(calls.filter(call=>call.url.endsWith('visitas_entrada.php')).length===1,'La doble pulsación duplica el ingreso.');
+    check(popups.length===1 && popups[0].tono==='entrada' && popups[0].nombre==='<img>Nueva visita' && popups[0].rut==='12345678-5','El registro de visita no muestra el aviso con la identidad guardada.');
+    check(popups[0].fecha==='2026-11-09 12:34:56' && popups[0].campos.some(([label,value])=>label==='Patente' && value==='AA1234'),'La visita pierde la hora guardada o los datos del vehículo.');
+    check(!element('btnVisitaEntrada').disabled && element('v_nombre').value==='','La visita aprobada deja el formulario bloqueado o sin limpiar.');
     window.events.pagehide();
     check(![...timers.values()].some(timer=>timer.delay===15000),'La pantalla cerrada sigue actualizando visitas.');
   }
   {
     const {document,element}=dom();
-    const calls=[],confirmations=[];
+    const calls=[],confirmations=[],popups=[];
     let previewErrors=false;
     const row={rut:'12345678-5',nombres:'<script>Persona</script>',unidad:'Unidad',grado:'Cabo',estado:'ACTIVO',revision:'revision-segura'};
     const fetch=async(url,init={})=>{

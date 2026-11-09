@@ -47,7 +47,9 @@ try {
     exit;
   }
 
-  echo json_encode(['ok'=>true,'resultado'=>'APROBADO','id'=>$id,'operador_salida_id'=>(int)$u['id']], JSON_UNESCAPED_UNICODE);
+  $saved=$pdo->prepare('SELECT fecha_hora_salida FROM visitas WHERE id=?');
+  $saved->execute([$id]);
+  echo json_encode(['ok'=>true,'resultado'=>'APROBADO','id'=>$id,'operador_salida_id'=>(int)$u['id'],'fecha_hora_salida'=>$saved->fetchColumn()], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
   http_response_code(500);

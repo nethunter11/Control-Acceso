@@ -14,6 +14,14 @@ qa_run(function (array &$qa): void {
   qa_check(json_decode($again['body'],true)['guardado']===false,'Se sobrescribió una salida previa.');
   $closed=qa_json($qa,'api/visitas_listar.php?rut='.$rut)['items'][0];
   qa_check($closed['operador_salida']===$qa['users']['CONTROL_VISITA']['username'],'Se cambió o perdió el operador de salida.');
+  qa_check($exit['fecha_hora_salida']===$closed['fecha_hora_salida'],'El popup no recibe la hora real de salida.');
+  $newRut=qa_staff($qa);
+  $response=qa_http($qa['sessions']['CONTROL_VISITA'],'api/visitas_entrada.php',['nombre'=>$qa['marker'],'rut'=>$newRut,'telefono'=>'+56 9 1234 5678','modo'=>'VEHICULO','patente'=>'AA1234']);
+  $entry=json_decode($response['body'],true,512,JSON_THROW_ON_ERROR);
+  if(isset($entry['id']))$qa['visits'][]=(int)$entry['id'];
+  qa_check($response['status']===200 && $entry['resultado']==='APROBADO','No se pudo registrar la nueva visita.');
+  $created=qa_json($qa,'api/visitas_listar.php?vista=dentro&rut='.$newRut)['items'][0];
+  qa_check($entry['fecha_hora_entrada']===$created['fecha_hora_entrada'] && $entry['telefono']===$created['telefono'] && $entry['patente']===$created['patente'],'El popup no recibe la hora y los datos guardados del ingreso.');
   qa_check(qa_json($qa,'api/visitas_listar.php?vista=dentro&rut='.$rut)['total']===0,'Una visita cerrada sigue dentro.');
   for($i=0;$i<3;$i++) { $query->execute([$qa['marker'],$rut]); $qa['visits'][]=(int)$qa['pdo']->lastInsertId(); }
   $one=qa_json($qa,'api/visitas_listar.php?vista=dentro&rut='.$rut.'&limit=2&page=1');

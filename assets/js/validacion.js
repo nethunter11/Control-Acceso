@@ -14,10 +14,27 @@
   }
   function renderCard(data) {
     if(!data.ok || !data.existe) {el('fichaFuncionario').innerHTML='';return;}
-    const person=data.funcionario,last=data.ultimo_movimiento;
-    const presence=data.presencia==='DENTRO'?'Dentro':data.presencia==='FUERA'?'Fuera':'Sin movimientos aprobados';
-    const presenceClass=data.presencia==='DENTRO'?'text-bg-success':data.presencia==='FUERA'?'text-bg-warning':'badge-soft';
-    el('fichaFuncionario').innerHTML='<div class="panel func-card '+(data.activo?'is-ok':'is-bad')+'"><div class="func-head"><div><div class="func-title">'+escape(person.nombres)+'</div><div class="func-subtitle mono">'+escape(person.rut)+'</div></div><span class="func-badge '+(data.activo?'ok':'bad')+'">'+(data.activo?'ACTIVO':'INACTIVO')+'</span></div><div class="presence-line"><span class="badge '+presenceClass+'">'+presence+'</span><span class="small text-muted">Presencia según movimientos aprobados</span></div><div class="func-grid mt-3"><div><div class="func-label">Unidad</div><div class="func-value">'+escape(person.unidad || '—')+'</div></div><div><div class="func-label">Grado</div><div class="func-value">'+escape(person.grado || '—')+'</div></div></div><div class="last-movement mt-3"><div class="func-label">Último movimiento aprobado</div>'+(last?'<div class="func-value">'+(last.tipo==='ENTRADA'?'Entrada':'Salida')+' · '+escape(last.fecha_hora)+'</div><div class="small mt-1">'+escape(last.puesto || 'Puesto sin registro')+' · '+escape(last.operador || 'Operador sin registro')+'</div>':'<p class="small mb-0 mt-1">Aún no hay movimientos aprobados.</p>')+'</div><div class="func-subtitle mt-3">Consultado: '+escape(data.checked_at)+'</div></div>';
+    const person=data.funcionario;
+    const inside=data.presencia==='DENTRO',outside=data.presencia==='FUERA';
+    const presence=inside?'Dentro del recinto':outside?'Fuera del recinto':'Sin movimientos aprobados';
+    const presenceClass=inside?'is-inside':outside?'is-outside':'is-unknown';
+    el('fichaFuncionario').innerHTML=`
+      <section class="consulta-identidad" aria-label="Datos personales">
+        <div class="consulta-persona">
+          <div><div class="consulta-identidad-label">Datos del funcionario</div><h3>${escape(person.nombres)}</h3></div>
+          <span class="func-badge ${data.activo?'ok':'bad'}"><i class="bi ${data.activo?'bi-check-circle':'bi-x-circle'}" aria-hidden="true"></i>${data.activo?'ACTIVO':'INACTIVO'}</span>
+        </div>
+        <p class="consulta-rut"><span>RUT</span><strong class="mono">${escape(person.rut)}</strong></p>
+        <dl class="consulta-datos">
+          <div><dt>Unidad</dt><dd>${escape(person.unidad || 'Sin registro')}</dd></div>
+          <div><dt>Grado</dt><dd>${escape(person.grado || 'Sin registro')}</dd></div>
+        </dl>
+      </section>
+      <div class="consulta-presencia ${presenceClass}">
+        <i class="bi ${inside?'bi-person-check':outside?'bi-box-arrow-right':'bi-dash-circle'}" aria-hidden="true"></i>
+        <div><div class="func-label">Estado de acceso</div><div class="consulta-presencia-valor">${presence}</div><p>Según los movimientos aprobados registrados.</p></div>
+      </div>
+      <p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Consultado: ${escape(data.checked_at)}</p>`;
   }
   async function consult(rut) {
     const data=await post('validar_rut.php',{rut});
@@ -28,13 +45,18 @@
     return data;
   }
   window.soloConsultar=async function () {
-    if(busy)return;
+    if(busy || el('consultaFuncionario').open || RegistroPopup.abierta())return;
     const rut=el('rut').value.trim();
     if(!rut){note('Ingresa un RUT.','warning');el('rut').focus();return;}
+    let data;
     lock(true);
-    try {await consult(rut);}
+    try {data=await consult(rut);}
     catch(error){el('fichaFuncionario').innerHTML='';note(error.message,'danger');}
     finally {lock(false);}
+    if(data?.ok && data.existe) {
+      el('consultaFuncionario').showModal();
+      el('btnCerrarConsulta').focus();
+    }
   };
   function renderResult(data,requested) {
     const ok=data.resultado==='APROBADO',exit=requested.tipo==='SALIDA';
@@ -45,9 +67,10 @@
     el('resultado').innerHTML='<div class="event-card '+tone+'"><div class="event-head"><div><div class="func-label mb-1">Última operación</div><div class="event-title"><i class="bi '+(ok?(exit?'bi-box-arrow-right':'bi-box-arrow-in-right'):'bi-x-circle')+'" aria-hidden="true"></i> '+title+'</div></div><span class="event-badge '+(ok?(exit?'exit':'ok'):'bad')+'">'+(ok?'APROBADO':'RECHAZADO')+'</span></div><div class="event-value">'+escape(name)+'</div><div class="mono mt-1">'+escape(data.rut || requested.rut)+'</div><div class="event-subtitle">'+escape(data.puesto || requested.puesto)+' · '+(requested.modo==='VEHICULO'?'Vehicular':'Peatonal')+'</div><div class="small mt-2">'+escape(date)+(data.guardado && data.operador?' · '+escape(data.operador):'')+'</div>'+(data.motivo?'<div class="event-motivo">'+escape(data.motivo)+'</div>':'')+'</div>';
   }
   window.registrar=async function (type) {
-    if(busy || !['ENTRADA','SALIDA'].includes(type))return;
+    if(busy || el('consultaFuncionario').open || RegistroPopup.abierta() || !['ENTRADA','SALIDA'].includes(type))return;
     const payload={rut:el('rut').value.trim(),tipo:type,puesto:el('puesto').value,modo:mode};
     if(!payload.rut){note('Ingresa un RUT.','warning');el('rut').focus();return;}
+    let popupClosed;
     lock(true);
     try {
       const person=await consult(payload.rut);
@@ -59,10 +82,20 @@
       const data=await post('registrar_evento.php',payload);
       if(!data.ok){note(data.error || 'No se pudo registrar el movimiento.','danger');return;}
       renderResult(data,payload);
+      const approved=data.resultado==='APROBADO',exit=type==='SALIDA';
+      const funcionario=data.funcionario || person.funcionario;
+      popupClosed=RegistroPopup.mostrar({
+        titulo:(exit?'Salida':'Entrada')+(approved?' registrada':' rechazada'),subtitulo:'Registro de funcionario',
+        tono:approved?(exit?'salida':'entrada'):'rechazo',etiqueta:'Datos del funcionario',
+        nombre:funcionario.nombres,rut:data.rut || payload.rut,activo:funcionario.estado?funcionario.estado==='ACTIVO':person.activo,
+        campos:[['Unidad',funcionario.unidad],['Grado',funcionario.grado]],
+        estado:approved?(exit?'Fuera del recinto':'Dentro del recinto'):'Movimiento rechazado',
+        detalle:data.motivo || (approved?'Movimiento registrado correctamente.':'No se registró el movimiento.'),fecha:data.guardado?data.fecha_hora:null
+      });
       try {await consult(payload.rut);} catch {el('fichaFuncionario').innerHTML='';note('La operación fue respondida; no se pudo actualizar la ficha. Consulta nuevamente.','warning');}
       if(typeof window.cargarDentro==='function')await window.cargarDentro();
     } catch(error){el('fichaFuncionario').innerHTML='';note(error.message+' Consulta el estado antes de volver a registrar.','danger');}
-    finally {lock(false);}
+    finally {lock(false);if(popupClosed)popupClosed.then(()=>{if(!RegistroPopup.abierta() && !busy)el('rut').focus();});}
   };
   window.setModo=function (value) {
     if(busy || !['PEATONAL','VEHICULO'].includes(value))return;
@@ -74,6 +107,7 @@
     el('rut').value='';for(const id of ['consultaMensaje','fichaFuncionario','resultado'])el(id).textContent='';el('rut').focus();
   };
   document.addEventListener('DOMContentLoaded',()=>{
+    el('consultaFuncionario').addEventListener('close',()=>{el('fichaFuncionario').textContent='';el('rut').focus();});
     el('rut').addEventListener('input',()=>{el('fichaFuncionario').innerHTML='';el('consultaMensaje').textContent='';});
     el('rut').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.soloConsultar();}});
     document.getElementById('quickSearch')?.addEventListener('keydown',event=>{if(event.key==='Enter'){el('rut').value=event.target.value.trim();window.soloConsultar();}});

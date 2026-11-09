@@ -53,7 +53,7 @@ $activePage = 'validacion';
               <button id="btnLimpiar" class="btn btn-outline-secondary" onclick="limpiar()"><i class="bi bi-eraser" aria-hidden="true"></i>Limpiar</button>
             </div>
             <div class="input-hint mt-3"><kbd>Enter</kbd> consulta el RUT. Usa los botones para confirmar una entrada o salida.</div>
-            <div class="mt-3" id="consultaMensaje" role="status" aria-live="polite"></div><div class="mt-3" id="fichaFuncionario"></div><div class="mt-3" id="resultado" role="status" aria-live="polite" aria-atomic="true"></div>
+            <div class="mt-3" id="consultaMensaje" role="status" aria-live="polite"></div><div class="mt-3" id="resultado" role="status" aria-live="polite" aria-atomic="true"></div>
           </div>
         </div>
         <div class="card card-dark">
@@ -75,7 +75,23 @@ $activePage = 'validacion';
     </section>
   </main>
 </div>
+<dialog id="consultaFuncionario" class="consulta-dialog" aria-labelledby="consultaTitulo" aria-describedby="consultaDescripcion">
+  <form method="dialog">
+    <header class="consulta-dialog-header">
+      <div class="consulta-dialog-heading">
+        <span class="consulta-dialog-icon"><i class="bi bi-person-vcard" aria-hidden="true"></i></span>
+        <div><h2 id="consultaTitulo">Consulta de funcionario</h2><p id="consultaDescripcion">Identidad y estado de acceso</p></div>
+      </div>
+      <button type="submit" class="btn-icon" value="cerrar" aria-label="Cerrar consulta"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </header>
+    <div id="fichaFuncionario" class="consulta-dialog-body"></div>
+    <footer class="consulta-dialog-footer">
+      <button type="submit" id="btnCerrarConsulta" class="btn btn-primary" value="cerrar" autofocus>Cerrar consulta</button>
+    </footer>
+  </form>
+</dialog>
 <?php include __DIR__ . '/partials/scripts.php'; ?>
+<script src="/Control-Acceso/assets/js/registro-popup.js?v=<?= filemtime(__DIR__ . '/assets/js/registro-popup.js') ?>"></script>
 <script src="/Control-Acceso/assets/js/personal-dentro.js?v=<?= filemtime(__DIR__ . '/assets/js/personal-dentro.js') ?>"></script>
 <script src="/Control-Acceso/assets/js/validacion.js?v=<?= filemtime(__DIR__ . '/assets/js/validacion.js') ?>"></script>
 

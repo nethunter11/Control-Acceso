@@ -25,32 +25,58 @@ async function visitPost(path,payload) {
 }
 async function registrarEntrada() {
   const button=document.getElementById('btnVisitaEntrada');
-  if(button.disabled) return;
+  if(button.disabled || RegistroPopup.abierta()) return;
   button.disabled=true;
+  let popupClosed;
   const value=id=>document.getElementById(id).value.trim();
+  const payload={nombre:value('v_nombre'),rut:value('v_rut'),telefono:value('v_tel'),patente:value('v_pat'),motivo:value('v_motivo'),modo:modoVisita};
   try {
-    const data=await visitPost('visitas_entrada.php',{nombre:value('v_nombre'),rut:value('v_rut'),telefono:value('v_tel'),patente:value('v_pat'),motivo:value('v_motivo'),modo:modoVisita});
-    if(data.resultado!=='APROBADO') {visitMessage(data.motivo || 'Ingreso rechazado.','warning'); return;}
+    const data=await visitPost('visitas_entrada.php',payload);
+    const approved=data.resultado==='APROBADO';
+    const fields=[['Teléfono',data.telefono ?? payload.telefono],['Modo de acceso',(data.modo || payload.modo)==='VEHICULO'?'Vehicular':'Peatonal']];
+    if((data.modo || payload.modo)==='VEHICULO')fields.push(['Patente',data.patente || payload.patente]);
+    popupClosed=RegistroPopup.mostrar({
+      titulo:approved?'Visita registrada':'Ingreso rechazado',subtitulo:'Registro de visita',tono:approved?'entrada':'rechazo',etiqueta:'Datos de la visita',
+      nombre:data.nombre || payload.nombre,rut:data.rut || payload.rut,campos:fields,
+      estado:approved?'Dentro del recinto':'Ingreso rechazado',detalle:data.motivo || (approved?'Ingreso registrado correctamente.':'No se registró el ingreso.'),fecha:data.fecha_hora_entrada
+    });
+    if(!approved) {visitMessage(data.motivo || 'Ingreso rechazado.','warning'); return;}
     limpiarForm(false);
     visitMessage('Entrada registrada: '+data.nombre+' · '+data.rut,'success');
     await cambiarVistaVisitas('dentro');
   } catch(error) {visitMessage(error.message,'danger');}
-  finally {button.disabled=false;}
+  finally {
+    button.disabled=false;
+    if(popupClosed)popupClosed.then(()=>{if(!RegistroPopup.abierta() && !button.disabled)document.getElementById('v_nombre').focus();});
+  }
 }
 async function marcarSalida(id) {
+  if(RegistroPopup.abierta()) return;
   const row=visitsRows.get(Number(id));
   if(!row) return;
-  if(!await Dialogos.confirmar('Registrar salida',row.nombre+' · RUT '+row.rut)) return;
   const button=document.getElementById('btnSalidaVisita_'+id);
   if(button?.disabled) return;
   if(button) button.disabled=true;
+  let popupClosed;
   try {
+    if(!await Dialogos.confirmar('Registrar salida',row.nombre+' · RUT '+row.rut)) return;
     const data=await visitPost('visitas_salida.php',{id:Number(id)});
-    if(data.resultado!=='APROBADO') {visitMessage(data.motivo || 'La visita ya tiene salida.','warning'); return;}
+    const approved=data.resultado==='APROBADO';
+    const fields=[['Teléfono',row.telefono],['Modo de acceso',row.modo==='VEHICULO'?'Vehicular':'Peatonal']];
+    if(row.modo==='VEHICULO') fields.push(['Patente',row.patente]);
+    popupClosed=RegistroPopup.mostrar({
+      titulo:approved?'Salida registrada':'Salida rechazada',subtitulo:'Registro de visita',tono:approved?'salida':'rechazo',etiqueta:'Datos de la visita',
+      nombre:row.nombre,rut:row.rut,campos:fields,
+      estado:approved?'Fuera del recinto':'Salida rechazada',detalle:data.motivo || (approved?'Salida registrada correctamente.':'No se registró la salida.'),fecha:approved?data.fecha_hora_salida:null
+    });
+    if(!approved) {visitMessage(data.motivo || 'La visita ya tiene salida.','warning'); return;}
     visitMessage('Salida registrada: '+row.nombre+' · '+row.rut,'success');
     await cargarVisitas(visitsPage);
   } catch(error) {visitMessage(error.message,'danger');}
-  finally {if(button) button.disabled=false;}
+  finally {
+    if(button) button.disabled=false;
+    if(popupClosed)popupClosed.then(()=>{if(!RegistroPopup.abierta())document.getElementById('btnVisitasRefresh').focus();});
+  }
 }
 function cambiarVistaVisitas(view) {
   visitsView=view;

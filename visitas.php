@@ -63,6 +63,7 @@ $activePage = 'visitas';
   </main>
 </div>
 <?php include __DIR__ . '/partials/scripts.php'; ?>
+<script src="/Control-Acceso/assets/js/registro-popup.js?v=<?= filemtime(__DIR__ . '/assets/js/registro-popup.js') ?>"></script>
 <script src="/Control-Acceso/assets/js/visitas.js?v=<?= filemtime(__DIR__ . '/assets/js/visitas.js') ?>"></script>
 </body>
 </html>

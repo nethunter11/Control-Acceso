@@ -61,10 +61,16 @@ try {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'DENTRO')
     ");
     $st2->execute([$nombre, $rut, $telefono ?: null, $modo, $patente ?: null, $puesto, $u['id'], $motivo ?: null]);
+    $visitId=$pdo->lastInsertId();
+    $saved=$pdo->prepare('SELECT fecha_hora_entrada FROM visitas WHERE id=?');
+    $saved->execute([$visitId]);
     return [
       'ok'=>true,
       'resultado'=>'APROBADO',
-      'id'=>$pdo->lastInsertId(),
+      'id'=>$visitId,
+      'fecha_hora_entrada'=>$saved->fetchColumn(),
+      'telefono'=>$telefono ?: null,
+      'patente'=>$patente ?: null,
       'rut'=>$rut,
       'nombre'=>$nombre,
       'modo'=>$modo,

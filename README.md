@@ -347,14 +347,21 @@ editados o importados: conserva los respaldos SQL privados y solicita una
 restauración revisando antes los movimientos posteriores al respaldo.
 ### Operación visual en validación
 
-Enter consulta el RUT. La ficha muestra la presencia registrada (Dentro, Fuera
-o Sin movimientos aprobados), el último aprobado, su fecha completa, puesto y
-operador. Cada entrada o salida se confirma con nombre, RUT, puesto y modo.
+Solo consultar y Enter muestran una ventana centrada, con cierre mediante X,
+Cerrar consulta o Escape. Al cerrar, el foco vuelve al RUT. La ficha destaca el
+nombre, RUT, unidad y grado; después muestra la presencia registrada (Dentro,
+Fuera o Sin movimientos aprobados) y la fecha y hora de consulta al pie.
+Cada entrada o salida se confirma con nombre, RUT, puesto y modo.
+Después del registro, una ventana del mismo estilo muestra el resultado y se
+cierra a los 4 segundos (también admite X, Cerrar o Escape). Se aplica a entradas
+y salidas de funcionarios y visitas. Conserva los datos personales destacados
+y la hora guardada; los errores técnicos permanecen en
+pantalla. La consulta simple no tiene cierre automático.
 El resultado conserva la identidad, la fecha guardada y el operador hasta la
 siguiente operación o Limpiar. Las entradas usan verde, las salidas ámbar y los
 rechazos rojo. Los cambios de permisos se confirman dentro de la aplicación y
-los errores aparecen en pantalla. Pruebas: `tests/operacion_visual.php` y
-`node tests/ui_operacion.js` con Node.js disponible.
+los errores aparecen en pantalla. Pruebas: `tests/operacion_visual.php`, `tests/visitas_control.php`,
+`node tests/ui_operacion.js` y `node tests/ui_registro_popup.js` con Node.js disponible.
 ### Tablas y búsquedas
 
 Registros, Personal dentro, Visitas, Usuarios y Funcionarios permiten elegir
