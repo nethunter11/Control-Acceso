@@ -29,7 +29,7 @@ $activePage = 'validacion';
           </div>
           <div class="card-body">
             <div class="validation-fields">
-              <div><label class="form-label" for="rut">RUT del funcionario</label><input class="form-control form-control-dark mono" id="rut" placeholder="12345678-5" autocomplete="off" spellcheck="false" aria-describedby="rutHint"><div class="input-hint" id="rutHint">Ingresa el RUT con su dígito verificador.</div></div>
+              <div><label class="form-label" for="rut">RUT del funcionario</label><input class="form-control form-control-dark mono" id="rut" placeholder="12345678" inputmode="numeric" maxlength="10" autocomplete="off" spellcheck="false" aria-describedby="rutHint"><div class="input-hint" id="rutHint">Ingresa solo el número del RUT, sin dígito verificador.</div></div>
               <div>
                 <label class="form-label" for="puesto">Puesto</label>
                 <select class="form-select form-control-dark" id="puesto">

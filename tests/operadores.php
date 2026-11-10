@@ -62,7 +62,7 @@ function operator_unused_rut(PDO $pdo, array $reserved): string {
         continue;
       }
       $lookup = $pdo->prepare('SELECT (SELECT COUNT(*) FROM funcionarios WHERE rut=?) + (SELECT COUNT(*) FROM registros_acceso WHERE rut=?)');
-      $lookup->execute([$rut, $rut]);
+      $lookup->execute([(string)$number,(string)$number]);
       if ((int)$lookup->fetchColumn() === 0) {
         return $rut;
       }
@@ -102,6 +102,7 @@ try {
   for ($i=0; $i<4; $i++) {
     $reserved[] = operator_unused_rut($pdo, $reserved);
   }
+  $reserved=array_map(fn($id)=>explode('-',$id)[0],$reserved);
   [$activeRut,$inactiveRut,$withoutEntryRut,$legacyRut] = $reserved;
   $insertStaff = $pdo->prepare('INSERT INTO funcionarios (rut,nombres,estado) VALUES (?,?,?)');
   foreach ($reserved as $rut) {

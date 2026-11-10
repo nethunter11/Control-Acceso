@@ -16,13 +16,13 @@ try {
     $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     if($page===false) throw new InvalidArgumentException('Página inválida.');
     $where=[]; $params=[];
-    if($q!=='') { $where[]="(rut LIKE ? ESCAPE '!' OR nombres LIKE ? ESCAPE '!' OR unidad LIKE ? ESCAPE '!')"; $params=[tabla_like(tabla_rut_busqueda($q)),tabla_like($q),tabla_like($q)]; }
+    if($q!=='') { $where[]="(rut LIKE ? ESCAPE '!' OR nombres LIKE ? ESCAPE '!' OR unidad LIKE ? ESCAPE '!')"; $params=[tabla_like(rut_funcionario_busqueda($q)),tabla_like($q),tabla_like($q)]; }
     if($state!=='') { $where[]='estado=?'; $params[]=$state; }
     $clause=$where?' WHERE '.implode(' AND ',$where):'';
     $pdo->beginTransaction();
     $query=$pdo->prepare('SELECT COUNT(*) FROM funcionarios'.$clause); $query->execute($params); $total=(int)$query->fetchColumn();
     $pagination=tabla_pagina($_GET,$total);$page=$pagination['page'];
-    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
+    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion,imagen FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
     $query->execute($params); $rows=$query->fetchAll();
     foreach($rows as &$row) $row['revision']=funcionario_revision($row); unset($row);
     $pdo->commit();

@@ -353,6 +353,19 @@ dialog::backdrop { background: rgba(4,10,20,.72); }
   .consulta-dialog-icon { display: none; }
 }
 
+/* Imagen asociada únicamente a la consulta de funcionarios. */
+#consultaFuncionario { width: min(780px,calc(100% - 32px)); }
+.consulta-perfil { display: grid; grid-template-columns: 156px minmax(0,1fr); align-items: start; gap: 24px; }
+.consulta-retrato { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid var(--border2); border-radius: 10px; background: var(--panel2); color: var(--muted); }
+.consulta-retrato > i { font-size: 58px; }
+.consulta-foto { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+.consulta-foto[hidden] { display: none; }
+.consulta-informacion { min-width: 0; }
+@media (max-width: 640px) {
+  .consulta-perfil { grid-template-columns: minmax(0,1fr); gap: 18px; }
+  .consulta-retrato { width: 136px; justify-self: center; }
+}
+
 /* Resultado temporal compartido por funcionarios y visitas. */
 .registro-popup { --registro-color: var(--accent2); }
 .registro-popup[data-tone="salida"] { --registro-color: var(--warn); }

@@ -17,11 +17,11 @@ try {
   $params = [];
   if ($rut !== '') {
     $where[] = "e.rut LIKE ? ESCAPE '!'";
-    $params[] = tabla_like(tabla_rut_busqueda($rut));
+    $params[] = tabla_like(rut_funcionario_busqueda($rut));
   }
   if($search!==''){
     $where[]="(f.nombres LIKE ? ESCAPE '!' OR e.rut LIKE ? ESCAPE '!')";
-    $params[]=tabla_like($search);$params[]=tabla_like(tabla_rut_busqueda($search));
+    $params[]=tabla_like($search);$params[]=tabla_like(rut_funcionario_busqueda($search));
   }
   if($puesto!==''){
     $where[]='(e.puesto=? OR s.puesto=?)';$params[]=$puesto;$params[]=$puesto;

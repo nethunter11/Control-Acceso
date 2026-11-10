@@ -70,7 +70,7 @@ function export_unused_rut(PDO $pdo): string {
       $rut = $number . '-' . $dv;
       if (!rut_es_valido($rut)) continue;
       $lookup = $pdo->prepare('SELECT (SELECT COUNT(*) FROM funcionarios WHERE rut=?) + (SELECT COUNT(*) FROM registros_acceso WHERE rut=?) + (SELECT COUNT(*) FROM visitas WHERE rut=?)');
-      $lookup->execute([$rut,$rut,$rut]);
+      $lookup->execute([(string)$number,(string)$number,$rut]);
       if ((int)$lookup->fetchColumn() === 0) return $rut;
     }
   }
@@ -118,7 +118,8 @@ try {
   $checkDates->execute([$rangeStart,$rangeEnd,$rangeStart,$rangeEnd,$rangeStart,$rangeEnd]);
   export_assert((int)$checkDates->fetchColumn() === 0, 'El periodo reservado para probar fechas ya contiene datos.');
 
-  $rut = export_unused_rut($pdo);
+  $visitorRut = export_unused_rut($pdo);
+  $rut = explode('-',$visitorRut)[0];
   $staffName = '=1+1, "Prueba ñ"';
   $pdo->prepare("INSERT INTO funcionarios (rut,nombres,estado) VALUES (?,?,'ACTIVO')")->execute([$rut,$staffName]);
   $createdStaff = true;
@@ -142,11 +143,12 @@ try {
     [$after.' 00:00:00',null],
   ];
   foreach ($visitTimes as [$entry,$exit]) {
-    $visitInsert->execute([$marker,$rut,'+56 9 1234 5678',$operators['ADMIN']['id'],$multiline,$entry,$exit,$exit===null?'DENTRO':'SALIO']);
+    $visitInsert->execute([$marker,$visitorRut,'+56 9 1234 5678',$operators['ADMIN']['id'],$multiline,$entry,$exit,$exit===null?'DENTRO':'SALIO']);
     $visitIds[] = (int)$pdo->lastInsertId();
   }
 
   $access = export_csv($fixtures['ADMIN'],['table'=>'registros_acceso','fecha'=>$date]);
+  export_assert($access['rows'][0]['rut']===$rut && !str_contains($rut,'-'),'Los accesos exportan un DV de funcionario.');
   export_assert(array_map(fn($row)=>(int)$row['id'],$access['rows']) === [$accessIds[1],$accessIds[2]], 'El filtro de accesos incluyó otro día o perdió un límite de medianoche.');
   export_assert($access['rows'][0]['motivo'] === $multiline && $access['rows'][0]['puesto'] === 'Pórtico Norte' && $access['rows'][0]['operador'] === $operators['ADMIN']['username'], 'El CSV perdió tildes, comillas, saltos o el operador.');
   export_assert($access['rows'][1]['motivo'] === "\t=1+1", 'Una fórmula no se exportó como texto.');
@@ -250,7 +252,7 @@ try {
 } finally {
   if ($rut !== null) {
     foreach ($accessIds as $id) $pdo->prepare('DELETE FROM registros_acceso WHERE id=? AND rut=?')->execute([$id,$rut]);
-    foreach ($visitIds as $id) $pdo->prepare('DELETE FROM visitas WHERE id=? AND rut=?')->execute([$id,$rut]);
+    foreach ($visitIds as $id) $pdo->prepare('DELETE FROM visitas WHERE id=? AND rut=?')->execute([$id,$visitorRut]);
     if ($createdStaff) $pdo->prepare('DELETE FROM funcionarios WHERE rut=? AND nombres=?')->execute([$rut,$staffName]);
   }
   foreach ($fixtures as $fixture) {

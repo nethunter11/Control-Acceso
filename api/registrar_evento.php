@@ -3,7 +3,7 @@
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../app/db.php';
-require_once __DIR__ . '/../app/rut.php';
+require_once __DIR__ . '/../app/rut_funcionario.php';
 require_once __DIR__ . '/../app/auth.php';
 require_once __DIR__ . '/../app/concurrencia.php';
 require_once __DIR__ . '/../app/puestos.php';
@@ -46,7 +46,7 @@ try {
   $data = input_data();
   $rutIngresado = $data['rut'] ?? '';
   $rut = is_string($rutIngresado) && preg_match('//u', $rutIngresado) === 1
-    ? rut_normalizar($rutIngresado)
+    ? rut_funcionario_normalizar($rutIngresado)
     : '';
   $tipo = strtoupper(trim($data['tipo'] ?? ''));
   $puestoIngresado = array_key_exists('puesto', $data) ? $data['puesto'] : PUESTOS_ACCESO[0];
@@ -64,9 +64,9 @@ try {
   }
 
   // 1) Validación RUT
-  if (!rut_es_valido($rut)) {
+  if (!rut_funcionario_es_valido($rut)) {
     // El historial de movimientos exige un funcionario existente.
-    echo json_encode(respuesta_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT inválido (DV o formato)'), JSON_UNESCAPED_UNICODE);
+    echo json_encode(respuesta_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT inválido: ingresa el número sin dígito verificador (1 a 8 dígitos)'), JSON_UNESCAPED_UNICODE);
     exit;
   }
 

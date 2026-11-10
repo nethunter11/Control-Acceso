@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/entrada.php';
 require_once __DIR__.'/rut.php';
+require_once __DIR__.'/rut_funcionario.php';
 
 function tabla_pagina(array $query,int $total,int $defaultLimit=25): array {
   $limit=filter_var($query['limit'] ?? $defaultLimit,FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>200]]);

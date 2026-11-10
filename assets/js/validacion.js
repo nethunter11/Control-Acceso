@@ -15,11 +15,18 @@
   function renderCard(data) {
     if(!data.ok || !data.existe) {el('fichaFuncionario').innerHTML='';return;}
     const person=data.funcionario;
+    const image=['/Control-Acceso/img/funcionarios/Imagen_hombre.png','/Control-Acceso/img/funcionarios/Imagen_mujer.png'].includes(person.imagen_url)?person.imagen_url:null;
     const inside=data.presencia==='DENTRO',outside=data.presencia==='FUERA';
     const presence=inside?'Dentro del recinto':outside?'Fuera del recinto':'Sin movimientos aprobados';
     const presenceClass=inside?'is-inside':outside?'is-outside':'is-unknown';
     el('fichaFuncionario').innerHTML=`
       <section class="consulta-identidad" aria-label="Datos personales">
+        <div class="consulta-perfil">
+          <div class="consulta-retrato" ${image?'':'role="img" aria-label="Sin imagen disponible"'}>
+            <i class="bi bi-person-bounding-box" aria-hidden="true"></i>
+            ${image?'<img class="consulta-foto" src="'+escape(image)+'" alt="Imagen de referencia del funcionario" width="156" height="195" decoding="async">':''}
+          </div>
+          <div class="consulta-informacion">
         <div class="consulta-persona">
           <div><div class="consulta-identidad-label">Datos del funcionario</div><h3>${escape(person.nombres)}</h3></div>
           <span class="func-badge ${data.activo?'ok':'bad'}"><i class="bi ${data.activo?'bi-check-circle':'bi-x-circle'}" aria-hidden="true"></i>${data.activo?'ACTIVO':'INACTIVO'}</span>
@@ -29,12 +36,15 @@
           <div><dt>Unidad</dt><dd>${escape(person.unidad || 'Sin registro')}</dd></div>
           <div><dt>Grado</dt><dd>${escape(person.grado || 'Sin registro')}</dd></div>
         </dl>
+          </div>
+        </div>
       </section>
       <div class="consulta-presencia ${presenceClass}">
         <i class="bi ${inside?'bi-person-check':outside?'bi-box-arrow-right':'bi-dash-circle'}" aria-hidden="true"></i>
         <div><div class="func-label">Estado de acceso</div><div class="consulta-presencia-valor">${presence}</div><p>Según los movimientos aprobados registrados.</p></div>
       </div>
       <p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Consultado: ${escape(FechasChile.fechaHora(data.checked_at))}</p>`;
+    el('fichaFuncionario').querySelector?.('.consulta-foto')?.addEventListener('error',event=>{const picture=event.currentTarget;picture.hidden=true;picture.parentElement.setAttribute('role','img');picture.parentElement.setAttribute('aria-label','Sin imagen disponible');});
   }
   async function consult(rut) {
     const data=await post('validar_rut.php',{rut});

@@ -9,8 +9,8 @@ try{
   $puesto=campo_texto($_GET['puesto'] ?? '','puesto',60);
   $result=campo_texto($_GET['resultado'] ?? '','resultado',10);
   if(!in_array($result,['','APROBADO','RECHAZADO'],true))throw new InvalidArgumentException('Resultado inválido.');
-  if($rut!==''){$where[]="r.rut LIKE ? ESCAPE '!'";$params[]=tabla_like(tabla_rut_busqueda($rut));}
-  if($search!==''){$where[]="(f.nombres LIKE ? ESCAPE '!' OR r.rut LIKE ? ESCAPE '!')";array_push($params,tabla_like($search),tabla_like(tabla_rut_busqueda($search)));}
+  if($rut!==''){$where[]="r.rut LIKE ? ESCAPE '!'";$params[]=tabla_like(rut_funcionario_busqueda($rut));}
+  if($search!==''){$where[]="(f.nombres LIKE ? ESCAPE '!' OR r.rut LIKE ? ESCAPE '!')";array_push($params,tabla_like($search),tabla_like(rut_funcionario_busqueda($search)));}
   if($puesto!==''){$where[]='r.puesto=?';$params[]=$puesto;}
   if($result!==''){$where[]='r.resultado=?';$params[]=$result;}
   $desde=$_GET['desde'] ?? ''; $hasta=$_GET['hasta'] ?? '';

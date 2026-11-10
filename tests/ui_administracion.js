@@ -98,7 +98,7 @@ async function comprobarAdministracion(sources,runtime) {
     const {document,element}=dom();
     const calls=[],confirmations=[],popups=[];
     let previewErrors=false;
-    const row={rut:'12345678-5',nombres:'<script>Persona</script>',unidad:'Unidad',grado:'Cabo',estado:'ACTIVO',revision:'revision-segura'};
+    const row={rut:'12345678',nombres:'<script>Persona</script>',unidad:'Unidad',grado:'Cabo',estado:'ACTIVO',imagen:'Imagen_mujer.png',revision:'revision-segura'};
     const fetch=async(url,init={})=>{
       const payload=init.body?JSON.parse(init.body):null;calls.push({url,payload});
       let data={ok:true,items:[row],total:1,page:1,pages:1};
@@ -117,7 +117,8 @@ async function comprobarAdministracion(sources,runtime) {
     element('sf_estado').value='INACTIVO';
     await element('staffForm').events.submit({preventDefault(){}});
     const saved=calls.find(call=>call.payload?.accion==='guardar').payload;
-    check(saved.revision==='revision-segura' && saved.estado==='INACTIVO' && confirmations[0].includes(row.rut),'La edición pierde la revisión o confirma sin identidad.');
+    check(saved.revision==='revision-segura' && saved.imagen==='Imagen_mujer.png' && saved.estado==='INACTIVO' && confirmations[0].includes(row.rut),'La edición pierde la revisión o confirma sin identidad.');
+    check(saved.rut==='12345678' && !element('staffTable').innerHTML.includes('12345678-'),'La ficha o su guardado añaden un DV.');
     element('staffCsv').files=[{size:20,arrayBuffer:async()=>new Uint8Array([114,117,116]).buffer}];
     element('staffImportMode').value='crear';
     await element('staffImportForm').events.submit({preventDefault(){}});

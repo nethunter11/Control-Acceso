@@ -10,7 +10,7 @@ try{
   $params=[];
   $pdo->beginTransaction();
   $totalInside=(int)$pdo->query($cte.' SELECT COUNT(*)'.$from)->fetchColumn();
-  if($search!==''){$from.=" AND (f.nombres LIKE ? ESCAPE '!' OR t.rut LIKE ? ESCAPE '!' OR f.unidad LIKE ? ESCAPE '!')";$params=[tabla_like($search),tabla_like(tabla_rut_busqueda($search)),tabla_like($search)];}
+  if($search!==''){$from.=" AND (f.nombres LIKE ? ESCAPE '!' OR t.rut LIKE ? ESCAPE '!' OR f.unidad LIKE ? ESCAPE '!')";$params=[tabla_like($search),tabla_like(rut_funcionario_busqueda($search)),tabla_like($search)];}
   if($puesto!==''){$from.=' AND t.puesto=?';$params[]=$puesto;}
   $query=$pdo->prepare($cte.' SELECT COUNT(*)'.$from);$query->execute($params);$total=(int)$query->fetchColumn();
   $pagination=tabla_pagina($_GET,$total);

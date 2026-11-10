@@ -65,7 +65,7 @@ try {
     if (!rut_es_valido($candidate)) {
       continue;
     }
-    $lookup->execute([$candidate]);
+    $lookup->execute([(string)$number]);
     if (!$lookup->fetchColumn()) {
       $unknownRut = $candidate;
       break;
@@ -76,14 +76,14 @@ try {
   $formattedUnknown = number_format((int)$unknownNumber, 0, ',', '.') . '-k';
 
   $cases = [
-    'dígito verificador incorrecto' => ['payload' => ['rut' => '12345678-0'], 'rut' => '12345678-0', 'motivo' => 'RUT inválido'],
-    'formato inválido' => ['payload' => ['rut' => 'abc'], 'rut' => 'AB-C', 'motivo' => 'RUT inválido'],
+    'dígito verificador incorrecto' => ['payload' => ['rut' => '12345678-0'], 'rut' => '', 'motivo' => 'RUT inválido'],
+    'formato inválido' => ['payload' => ['rut' => 'abc'], 'rut' => '', 'motivo' => 'RUT inválido'],
     'RUT vacío' => ['payload' => ['rut' => ''], 'rut' => '', 'motivo' => 'RUT inválido'],
     'campo ausente' => ['payload' => [], 'rut' => '', 'motivo' => 'RUT inválido'],
-    'RUT demasiado largo' => ['payload' => ['rut' => str_repeat('9', 80)], 'rut' => str_repeat('9', 79) . '-9', 'motivo' => 'RUT inválido'],
+    'RUT demasiado largo' => ['payload' => ['rut' => str_repeat('9', 80)], 'rut' => '', 'motivo' => 'RUT inválido'],
     'dato no textual' => ['payload' => ['rut' => ['dato', 'incorrecto']], 'rut' => '', 'motivo' => 'RUT inválido'],
-    'RUT válido no registrado' => ['payload' => ['rut' => $unknownRut], 'rut' => $unknownRut, 'motivo' => 'RUT no registrado'],
-    'RUT con puntos y DV minúscula' => ['payload' => ['rut' => $formattedUnknown], 'rut' => $unknownRut, 'motivo' => 'RUT no registrado'],
+    'RUT válido no registrado' => ['payload' => ['rut' => $unknownRut], 'rut' => $unknownNumber, 'motivo' => 'RUT no registrado'],
+    'RUT con puntos y DV minúscula' => ['payload' => ['rut' => $formattedUnknown], 'rut' => $unknownNumber, 'motivo' => 'RUT no registrado'],
   ];
 
   // Sesiones temporales de operadores existentes; no se crean usuarios.

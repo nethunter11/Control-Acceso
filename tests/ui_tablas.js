@@ -23,7 +23,7 @@ async function comprobarTablas(sources,runtime){
     const response=(url,label='Persona')=>{
       const requested=Number(/[?&]page=(\d+)/.exec(url)?.[1] || 1),limit=Number(/[?&]limit=(\d+)/.exec(url)?.[1] || 25);
       const total=url.includes('NO_EXISTE')?0:61,pages=Math.max(1,Math.ceil(total/limit)),page=Math.min(requested,pages);
-      return{ok:true,json:async()=>({ok:true,total,pages,page,limit,from:total?(page-1)*limit+1:0,to:Math.min(total,page*limit),puestos:['Pórtico Norte'],items:total?[{nombres:label,rut:'12345678-5',tipo_movimiento:'ENTRADA',entrada:'2001-02-03 23:00:00',salida:'2001-02-04 01:00:00',puesto:'Pórtico Norte',puesto_salida:'Pórtico Sur',resultado:'APROBADO',operador_entrada:'ADMIN',operador_salida:'GUARDIA'}]:[]})};
+      return{ok:true,json:async()=>({ok:true,total,pages,page,limit,from:total?(page-1)*limit+1:0,to:Math.min(total,page*limit),puestos:['Pórtico Norte'],items:total?[{nombres:label,rut:'12345678',tipo_movimiento:'ENTRADA',entrada:'2001-02-03 23:00:00',salida:'2001-02-04 01:00:00',puesto:'Pórtico Norte',puesto_salida:'Pórtico Sur',resultado:'APROBADO',operador_entrada:'ADMIN',operador_salida:'GUARDIA'}]:[]})};
     };
     const fetch=async(url)=>{calls.push(url);if(defer){defer=false;return new Promise(resolve=>{deferred=()=>resolve(response(url,'Anterior'));});}return response(url,'<script>Nueva</script>');};
     new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Tablas','FechasChile',sources.records)(d.window,d.document,fetch,runtime.URLSearchParams,runtime.AbortController,d.setTimer,d.clearTimer,d.table,{...dates,hoy:()=>'2026-11-07'});
@@ -44,7 +44,7 @@ async function comprobarTablas(sources,runtime){
     const fetch=async(url)=>{
       calls.push(url);if(fail)throw new Error('Sin conexión');
       const page=Number(/[?&]page=(\d+)/.exec(url)?.[1] || 1),filtered=url.includes('q=Persona');
-      return{ok:status===200,status,json:async()=>status===200?{ok:true,page,pages:3,limit:25,total:filtered?1:61,total_dentro:72,from:1,to:filtered?1:25,puestos:[],checked_at:'2026-11-07 22:00:00',items:[{nombres:'<b>Persona</b>',rut:'12345678-5',estado:'INACTIVO',ultima_hora:'2001-02-03 23:00:00'}]}:{ok:false,error:'Debes iniciar sesión.'}};
+      return{ok:status===200,status,json:async()=>status===200?{ok:true,page,pages:3,limit:25,total:filtered?1:61,total_dentro:72,from:1,to:filtered?1:25,puestos:[],checked_at:'2026-11-07 22:00:00',items:[{nombres:'<b>Persona</b>',rut:'12345678',estado:'INACTIVO',ultima_hora:'2001-02-03 23:00:00'}]}:{ok:false,error:'Debes iniciar sesión.'}};
     };
     new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Tablas','FechasChile',sources.inside)(d.window,d.document,fetch,runtime.URLSearchParams,runtime.AbortController,d.setTimer,d.clearTimer,d.table,dates);
     d.document.events.DOMContentLoaded();await flush();

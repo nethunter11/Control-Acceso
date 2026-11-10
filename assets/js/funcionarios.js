@@ -31,7 +31,7 @@
   function edit(rut) {
     const row=records.get(rut); if(!row) return;
     revision=row.revision;
-    for(const field of ['rut','nombres','unidad','grado','estado']) el('sf_'+field).value=row[field] ?? '';
+    for(const field of ['rut','nombres','unidad','grado','estado','imagen']) el('sf_'+field).value=row[field] ?? '';
     el('sf_rut').readOnly=true; el('staffFormTitle').textContent='Editar funcionario · '+row.rut;
     message('staffMessage','Los cambios se aplican al guardar.');
     el('staffForm').scrollIntoView({block:'center'}); el('sf_nombres').focus();
@@ -39,7 +39,7 @@
   async function save(event) {
     event.preventDefault(); if(el('staffSave').disabled) return;
     const data={accion:'guardar',revision};
-    for(const field of ['rut','nombres','unidad','grado','estado']) data[field]=el('sf_'+field).value.trim();
+    for(const field of ['rut','nombres','unidad','grado','estado','imagen']) data[field]=el('sf_'+field).value.trim();
     if(data.estado==='INACTIVO' && !await Dialogos.confirmar('Guardar funcionario inactivo',data.nombres+' · '+data.rut+'. No podrá registrar nuevos ingresos.')) return;
     el('staffSave').disabled=true;
     try {

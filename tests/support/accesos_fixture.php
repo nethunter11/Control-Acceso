@@ -44,6 +44,7 @@ function qa_staff(array &$qa, string $state = 'ACTIVO'): string {
     foreach (array_merge(range(0,9), ['K']) as $dv) {
       $rut = $number.'-'.$dv;
       if (!rut_es_valido($rut)) continue;
+      $rut=(string)$number;
       $query = $qa['pdo']->prepare('SELECT COUNT(*) FROM funcionarios WHERE rut=?');
       $query->execute([$rut]);
       if ($query->fetchColumn() != 0) continue;
@@ -53,6 +54,10 @@ function qa_staff(array &$qa, string $state = 'ACTIVO'): string {
     }
   }
   throw new RuntimeException('No se pudo reservar un RUT de prueba.');
+}
+function qa_rut_completo(string $number): string {
+  foreach(array_merge(range(0,9),['K']) as $dv)if(rut_es_valido($number.'-'.$dv))return $number.'-'.$dv;
+  throw new RuntimeException('No se pudo calcular el DV del visitante de prueba.');
 }
 function qa_event(array $qa, string $rut, string $type, string $when, string $result = 'APROBADO', ?string $role = 'ADMIN'): int {
   $query = $qa['pdo']->prepare("INSERT INTO registros_acceso (rut,tipo,fecha_hora,resultado,operador_id,puesto,motivo) VALUES (?,?,?,?,?,?,?)");

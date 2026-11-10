@@ -234,7 +234,7 @@ cierre, al pulsar fuera o con **Escape**. Las páginas admiten navegación por t
 y un enlace **Ir al contenido**.
 
 En Validación, las acciones principales son **Registrar entrada** y **Registrar
-salida**. Se mantienen el atajo Enter para registrar una entrada desde RUT, la
+salida**. Se mantienen el atajo Enter para consultar un RUT, la
 consulta independiente, los puestos permitidos y las reglas de registro.
 Reportes conserva los indicadores y distingue entradas en azul y salidas en ámbar.
 Los listados vacíos muestran un mensaje para distinguirlos de una carga pendiente.
@@ -425,3 +425,92 @@ las migraciones aplicadas y evitan ejecutarlas simultáneamente.
 Después de la actualización, recarga con Ctrl + F5 e inicia sesión nuevamente.
 Los usuarios y sus contraseñas se conservan; los movimientos anteriores sin
 operador de salida siguen mostrándose sin atribuir una identidad.
+
+## Imágenes de referencia de funcionarios
+
+La consulta de un funcionario registrado muestra su imagen junto a nombre, RUT,
+unidad y grado. Las imágenes genéricas se guardan localmente en
+img/funcionarios/Imagen_hombre.png e Imagen_mujer.png; no se descargan de
+servicios externos durante la consulta. Su selección no representa un dato de
+sexo o identidad de género y no se deduce automáticamente del nombre.
+
+La columna nullable funcionarios.imagen conserva la selección por ficha.
+En Funcionarios > Editar se puede elegir Imagen hombre, Imagen mujer o Sin imagen
+asignada y guardar. Se conservan las imágenes al importar el CSV existente o al
+editar desde clientes que no envían ese campo. La selección participa en la
+revisión de cambios para impedir sobrescribir una edición posterior.
+
+Después de respaldar y verificar la restauración del SQL, ejecutar
+C:\xampp\php\php.exe tools/migrar-pruebas.php en pruebas. La migración
+20261110_01_imagen_funcionarios.sql es aditiva e idempotente. La versión oficial
+requiere su propia publicación y migración autorizada; no recibe datos de pruebas.
+Visitas y los avisos de registro de movimientos conservan su comportamiento.
+
+Verificación: tests/imagenes_funcionarios.php, tests/funcionarios.php y
+tests/ui_operacion.js. Los dos primeros requieren el servidor y respaldo SQL
+verificado, usan datos temporales y comprueban su limpieza al terminar.
+
+## RUT de funcionarios sin dígito verificador
+
+Los funcionarios se identifican mediante el número de su RUT, por ejemplo
+`20420416`. El padrón, los movimientos, las consultas, los popups, las búsquedas
+y los CSV de funcionarios/accesos utilizan ese número. Se admiten puntos y
+espacios de presentación, pero no ceros iniciales ni más de ocho cifras. No se
+calcula ni se almacena un DV para identificar funcionarios.
+
+Un número de ocho cifras se interpreta siempre completo como el cuerpo del RUT.
+Para importar padrones anteriores, se admite un RUT con guion y DV explícito:
+se comprueba su DV y después se elimina. Un DV explícito incorrecto se rechaza.
+No se interpreta una novena cifra sin guion como un DV, para evitar ambigüedades.
+
+Visitas mantiene su RUT completo y la validación de su dígito verificador. Las
+funciones de visitas y su presentación no cambian. El teclado o lector puede
+introducir el número de funcionario; Enter sigue siendo solo una consulta.
+Los movimientos requieren la confirmación habitual.
+
+La conversión de datos existentes se ejecuta una vez, con el servidor de pruebas
+detenido y un respaldo SQL cuya restauración ya se haya comprobado:
+
+```powershell
+C:\xampp\php\php.exe tools\migrar-rut-funcionarios.php --aplicar
+```
+
+La herramienta solo permite `control_acceso_pruebas`. Adapta el padrón y sus
+movimientos dentro de una transacción, conserva imágenes y fechas, no desactiva
+claves foráneas y no altera visitas. Si detecta dos fichas con el mismo número,
+cancela la operación. Se puede repetir sin duplicar datos. No se ejecuta desde
+peticiones web. No publicar el código en el entorno oficial sin planificar su
+conversión durante una ventana de mantenimiento y respaldar antes esa base.
+
+Comprobaciones: `tests/rut_funcionarios.php`, `tests/rut_rechazos.php`,
+`tests/duplicados_acceso.php`, `tests/funcionarios.php`,
+`tests/imagenes_funcionarios.php`, `tests/tablas_busquedas.php`,
+`tests/visitas_control.php`, `tests/exportaciones.php` y `tests/concurrencia.php`.
+Las pruebas usan datos temporales y verifican las huellas de las cuatro tablas.
+
+## Publicación de fotografías y RUT de funcionarios — 10 de noviembre de 2026
+
+La etiqueta `version-oficial-funcionarios-2026-11-10` identifica la publicación de
+fotografías de funcionarios y su RUT sin dígito verificador. Visitas conserva el
+RUT completo. Las asignaciones personales de imágenes y los respaldos SQL se
+mantienen fuera del repositorio.
+
+Durante esta publicación se utiliza una ventana de mantenimiento, se verifica la
+restauración del respaldo de la base oficial y se ejecuta desde la carpeta oficial:
+
+```powershell
+C:\xampp\php\php.exe tools\migrar-estable.php --aplicar
+```
+
+El comando agrega las migraciones pendientes y convierte los identificadores de
+funcionarios y sus movimientos en una transacción. No importa datos de pruebas
+ni modifica el RUT de visitas. Se verifican las fotografías asignadas y las
+consultas HTTP antes de finalizar el mantenimiento.
+
+Para volver al código anterior también se debe revisar el formato de los datos:
+revertir únicamente el commit no devuelve los DV al padrón. El SQL anterior y la
+referencia del código quedan en el respaldo privado; una restauración sobre la
+base oficial debe autorizarse después de revisar los movimientos posteriores.
+
+Desde esta publicación, cada cambio terminado se guarda con su commit. Las
+mejoras futuras se preparan en pruebas y se publican cuando el usuario lo solicita.

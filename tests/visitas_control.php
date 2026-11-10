@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__.'/support/accesos_fixture.php';
 qa_run(function (array &$qa): void {
-  $rut=qa_staff($qa);
+  $rut=qa_rut_completo(qa_staff($qa));
   $query=$qa['pdo']->prepare("INSERT INTO visitas (nombre,rut,puesto,fecha_hora_entrada,estado) VALUES (?,?,'Pórtico de Visitas','2001-02-03 23:00:00','DENTRO')");
   $query->execute([$qa['marker'],$rut]); $legacy=(int)$qa['pdo']->lastInsertId(); $qa['visits'][]=$legacy;
   $inside=qa_json($qa,'api/visitas_listar.php?vista=dentro&fecha=2026-11-07&rut='.$rut);
@@ -15,7 +15,7 @@ qa_run(function (array &$qa): void {
   $closed=qa_json($qa,'api/visitas_listar.php?rut='.$rut)['items'][0];
   qa_check($closed['operador_salida']===$qa['users']['CONTROL_VISITA']['username'],'Se cambió o perdió el operador de salida.');
   qa_check($exit['fecha_hora_salida']===$closed['fecha_hora_salida'],'El popup no recibe la hora real de salida.');
-  $newRut=qa_staff($qa);
+  $newRut=qa_rut_completo(qa_staff($qa));
   $response=qa_http($qa['sessions']['CONTROL_VISITA'],'api/visitas_entrada.php',['nombre'=>$qa['marker'],'rut'=>$newRut,'telefono'=>'+56 9 1234 5678','modo'=>'VEHICULO','patente'=>'AA1234']);
   $entry=json_decode($response['body'],true,512,JSON_THROW_ON_ERROR);
   if(isset($entry['id']))$qa['visits'][]=(int)$entry['id'];

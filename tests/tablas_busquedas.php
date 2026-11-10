@@ -25,7 +25,7 @@ qa_run(function(array &$qa):void{
     qa_check($filtered['total']===1 && $filtered['items'][0]['puesto_salida']==='Pórtico Sur','Filtrar por el puesto de salida rompe la pareja.');
     $literal=qa_json($qa,'api/registros_resumen.php?q='.rawurlencode($qa['marker'].' %').'&limit=100');
     qa_check($literal['total']===61 && count($literal['items'])===61,'El porcentaje en la búsqueda funciona como comodín.');
-    $formatted=number_format((int)explode('-',$ruts[0])[0],0,',','.').'-'.explode('-',$ruts[0])[1];
+    $formatted=number_format((int)$ruts[0],0,',','.');
     qa_check(qa_json($qa,'api/registros_resumen.php?q='.rawurlencode($formatted))['total']===61,'La búsqueda de RUT con puntos falla.');
     $last=qa_json($qa,'api/ultimos.php?rut='.$ruts[0].'&limit=100&page=2');
     qa_check($last['total']===122 && count($last['items'])===22,'El historial individual mantiene un límite oculto.');
@@ -44,7 +44,7 @@ qa_run(function(array &$qa):void{
     $accent=qa_json($qa,'api/personal_dentro.php?q='.rawurlencode($qa['marker'].' Munoz').'&page=1');
     qa_check($accent['total']===1 && $accent['items'][0]['rut']===$ruts[1],'No se encuentra un nombre sin escribir la tilde.');
     $visit=$qa['pdo']->prepare("INSERT INTO visitas(nombre,rut,modo,patente,puesto,fecha_hora_entrada,fecha_hora_salida,estado) VALUES (?,?,'VEHICULO',?,'Pórtico de Visitas','2001-02-03 12:00:00','2001-02-03 13:00:00','SALIO')");
-    for($i=0;$i<81;$i++){$visit->execute([$qa['marker'].' Muñoz',$ruts[0],$i===0?'ABCD12':'EFGH34']);$qa['visits'][]=(int)$qa['pdo']->lastInsertId();}
+    for($i=0;$i<81;$i++){$visit->execute([$qa['marker'].' Muñoz',qa_rut_completo($ruts[0]),$i===0?'ABCD12':'EFGH34']);$qa['visits'][]=(int)$qa['pdo']->lastInsertId();}
     $ids=[];
     for($page=1;$page<=4;$page++){
       $data=qa_json($qa,'api/visitas_listar.php?vista=historial&q='.rawurlencode($qa['marker'].' Munoz').'&limit=25&page='.$page);
@@ -52,7 +52,7 @@ qa_run(function(array &$qa):void{
       $ids=array_merge($ids,array_map('intval',array_column($data['items'],'id')));
     }
     qa_check($ids===array_reverse($qa['visits']),'Las páginas de visitas duplican o pierden filas.');
-    qa_check(qa_json($qa,'api/visitas_listar.php?rut='.$ruts[0].'&q=ABCD12')['total']===1,'No se busca por patente.');
+    qa_check(qa_json($qa,'api/visitas_listar.php?rut='.qa_rut_completo($ruts[0]).'&q=ABCD12')['total']===1,'No se busca por patente.');
     echo "OK: presencia paginada sin alterar el total, nombres con tildes y 81 visitas por nombre/RUT/patente\n";
 
     $create=$qa['pdo']->prepare('INSERT INTO usuarios(username,password_hash,rol,activo) VALUES (?,?,?,?)');

@@ -24,10 +24,11 @@ $activePage='funcionarios';
       <div class="card-body">
         <form id="staffForm">
           <div class="row g-3">
-            <div class="col-12 col-sm-5"><label class="form-label" for="sf_rut">RUT</label><input id="sf_rut" class="form-control form-control-dark mono" required maxlength="20" autocomplete="off" placeholder="12345678-5"><div class="input-hint">El RUT no se modifica después de crear la ficha.</div></div>
+            <div class="col-12 col-sm-5"><label class="form-label" for="sf_rut">RUT</label><input id="sf_rut" class="form-control form-control-dark mono" required maxlength="10" inputmode="numeric" autocomplete="off" placeholder="12345678"><div class="input-hint">Sin dígito verificador. El RUT no se modifica después de crear la ficha.</div></div>
             <div class="col-12 col-sm-7"><label class="form-label" for="sf_nombres">Nombre completo</label><input id="sf_nombres" class="form-control form-control-dark" required maxlength="120" autocomplete="off"></div>
             <div class="col-12 col-sm-6"><label class="form-label" for="sf_unidad">Unidad</label><input id="sf_unidad" class="form-control form-control-dark" maxlength="120"></div>
             <div class="col-12 col-sm-6"><label class="form-label" for="sf_grado">Grado</label><input id="sf_grado" class="form-control form-control-dark" maxlength="80"></div>
+            <div class="col-12"><label class="form-label" for="sf_imagen">Imagen del funcionario</label><select id="sf_imagen" class="form-select form-control-dark"><option value="">Sin imagen asignada</option><option value="Imagen_hombre.png">Imagen hombre</option><option value="Imagen_mujer.png">Imagen mujer</option></select><div class="input-hint">Se muestra al consultar al funcionario.</div></div>
             <div class="col-12"><label class="form-label" for="sf_estado">Estado</label><select id="sf_estado" class="form-select form-control-dark"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select><div class="input-hint">Desactivar impide nuevos ingresos y conserva el historial.</div></div>
           </div>
           <div class="d-flex gap-2 mt-4"><button id="staffSave" type="submit" class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>Guardar funcionario</button><button id="staffNew" type="button" class="btn btn-outline-secondary">Limpiar / Nuevo</button></div>
@@ -40,7 +41,7 @@ $activePage='funcionarios';
     <section class="card card-dark h-100">
       <div class="card-header card-header-dark"><h2 class="h6 mb-0">Importar funcionarios desde CSV</h2></div>
       <div class="card-body">
-        <p class="small text-muted">Archivo UTF-8, separado por comas o punto y coma. Máximo 1 MB y 1000 filas. Primero revisa los datos; se guardan al confirmar.</p>
+        <p class="small text-muted">Archivo UTF-8, separado por comas o punto y coma. RUT sin dígito verificador. Máximo 1 MB y 1000 filas. Primero revisa los datos; se guardan al confirmar.</p>
         <form id="staffImportForm">
           <label class="form-label" for="staffCsv">Archivo CSV</label><input id="staffCsv" type="file" accept=".csv,text/csv" class="form-control form-control-dark" required>
           <label class="form-label mt-3" for="staffImportMode">Modo de importación</label><select id="staffImportMode" class="form-select form-control-dark"><option value="crear">Solo crear funcionarios nuevos</option><option value="actualizar">Crear nuevos y actualizar los existentes</option></select>

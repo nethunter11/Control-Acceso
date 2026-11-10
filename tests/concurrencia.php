@@ -118,7 +118,7 @@ function concurrent_unused_rut(PDO $pdo, array $reserved): string {
         continue;
       }
       $lookup = $pdo->prepare('SELECT (SELECT COUNT(*) FROM funcionarios WHERE rut=?) + (SELECT COUNT(*) FROM registros_acceso WHERE rut=?) + (SELECT COUNT(*) FROM visitas WHERE rut=?)');
-      $lookup->execute([$rut, $rut, $rut]);
+      $lookup->execute([(string)$number,(string)$number,$rut]);
       if ((int)$lookup->fetchColumn() === 0) {
         return $rut;
       }
@@ -141,6 +141,8 @@ try {
   for ($i=0; $i<4; $i++) {
     $reserved[] = concurrent_unused_rut($pdo, $reserved);
   }
+  $reserved[0]=explode('-',$reserved[0])[0];
+  $reserved[1]=explode('-',$reserved[1])[0];
   [$staffRut, $otherStaffRut, $visitorRut, $rollbackRut] = $reserved;
   $insertStaff = $pdo->prepare("INSERT INTO funcionarios (rut,nombres,estado) VALUES (?,?,'ACTIVO')");
   foreach ([$staffRut, $otherStaffRut] as $rut) {

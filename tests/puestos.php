@@ -48,7 +48,7 @@ function gate_unused_rut(PDO $pdo, array $reserved): string {
         continue;
       }
       $lookup = $pdo->prepare('SELECT (SELECT COUNT(*) FROM funcionarios WHERE rut=?) + (SELECT COUNT(*) FROM registros_acceso WHERE rut=?) + (SELECT COUNT(*) FROM visitas WHERE rut=?)');
-      $lookup->execute([$rut,$rut,$rut]);
+      $lookup->execute([(string)$number,(string)$number,$rut]);
       if ((int)$lookup->fetchColumn() === 0) {
         return $rut;
       }
@@ -93,6 +93,7 @@ try {
   for ($i=0; $i<4; $i++) {
     $reserved[] = gate_unused_rut($pdo, $reserved);
   }
+  for($i=0;$i<3;$i++)$reserved[$i]=explode('-',$reserved[$i])[0];
   $insertStaff = $pdo->prepare("INSERT INTO funcionarios (rut,nombres,estado) VALUES (?,?,'ACTIVO')");
   foreach (array_slice($reserved,0,3) as $rut) {
     $insertStaff->execute([$rut,$marker]);
