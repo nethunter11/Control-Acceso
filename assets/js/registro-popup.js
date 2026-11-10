@@ -32,6 +32,9 @@
     settle();
     const tone=Object.hasOwn(tones,data.tono)?data.tono:'entrada',style=tones[tone];
     dialog.dataset.tone=tone;
+    const staff=data.funcionario===true;
+    const image=staff && ['/Control-Acceso/img/funcionarios/Imagen_hombre.png','/Control-Acceso/img/funcionarios/Imagen_mujer.png'].includes(data.imagen_url)?data.imagen_url:null;
+    dialog.dataset.funcionario=String(staff);
     dialog.querySelector('#registroPopupTitulo').textContent=data.titulo;
     dialog.querySelector('#registroPopupDescripcion').textContent=data.subtitulo || 'Resultado del registro';
     dialog.querySelector('[data-popup-icon]').className='bi '+style.icon;
@@ -39,12 +42,15 @@
     const badgeClass=data.activo===true?'ok':data.activo===false?'bad':'registro-badge-visita';
     dialog.querySelector('[data-popup-body]').innerHTML=`
       <section class="consulta-identidad" aria-label="Datos personales">
+        ${staff?'<div class="consulta-perfil"><div class="consulta-retrato" '+(image?'':'role="img" aria-label="Sin imagen disponible"')+'><i class="bi bi-person-bounding-box" aria-hidden="true"></i>'+(image?'<img class="consulta-foto" src="'+escape(image)+'" alt="Imagen de referencia del funcionario" width="156" height="195" decoding="async">':'')+'</div><div class="consulta-informacion">':''}
         <div class="consulta-persona"><div><div class="consulta-identidad-label">${escape(data.etiqueta || 'Datos personales')}</div><h3>${escape(data.nombre)}</h3></div><span class="func-badge ${badgeClass}">${badge}</span></div>
         <p class="consulta-rut"><span>RUT</span><strong class="mono">${escape(data.rut)}</strong></p>
         <dl class="consulta-datos">${(data.campos || []).map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value || 'Sin registro')+'</dd></div>').join('')}</dl>
+        ${staff?'</div></div>':''}
       </section>
       <div class="consulta-presencia registro-popup-estado"><i class="bi ${style.icon}" aria-hidden="true"></i><div><div class="func-label">Estado de acceso</div><div class="consulta-presencia-valor">${escape(data.estado)}</div>${data.detalle?'<p>'+escape(data.detalle)+'</p>':''}</div><span class="event-badge ${style.badge}">${tone==='rechazo'?'RECHAZADO':'APROBADO'}</span></div>
       ${data.fecha?'<p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Registrado: '+escape(FechasChile.fechaHora(data.fecha))+'</p>':''}`;
+    if(image)dialog.querySelector('.consulta-foto')?.addEventListener('error',event=>{const picture=event.currentTarget;picture.hidden=true;picture.parentElement.setAttribute('role','img');picture.parentElement.setAttribute('aria-label','Sin imagen disponible');});
     const closed=new Promise(resolve=>{finish=resolve;});
     if(!dialog.open)dialog.showModal();
     dialog.querySelector('[data-popup-close]').focus();

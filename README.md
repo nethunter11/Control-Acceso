@@ -428,8 +428,9 @@ operador de salida siguen mostrándose sin atribuir una identidad.
 
 ## Imágenes de referencia de funcionarios
 
-La consulta de un funcionario registrado muestra su imagen junto a nombre, RUT,
-unidad y grado. Las imágenes genéricas se guardan localmente en
+La consulta y los avisos de entrada o salida de un funcionario registrado muestran
+su imagen junto a nombre, RUT, unidad y grado. Los avisos mantienen el cierre
+automático de cuatro segundos. Las imágenes genéricas se guardan localmente en
 img/funcionarios/Imagen_hombre.png e Imagen_mujer.png; no se descargan de
 servicios externos durante la consulta. Su selección no representa un dato de
 sexo o identidad de género y no se deduce automáticamente del nombre.
@@ -444,10 +445,13 @@ Después de respaldar y verificar la restauración del SQL, ejecutar
 C:\xampp\php\php.exe tools/migrar-pruebas.php en pruebas. La migración
 20261110_01_imagen_funcionarios.sql es aditiva e idempotente. La versión oficial
 requiere su propia publicación y migración autorizada; no recibe datos de pruebas.
-Visitas y los avisos de registro de movimientos conservan su comportamiento.
+Los funcionarios sin imagen asignada muestran un icono de referencia. Si el
+archivo no carga, se utiliza ese mismo icono. Solo se admiten las dos rutas locales
+permitidas. Las ventanas de visitas conservan su formato y no reciben fotografías
+de funcionarios.
 
 Verificación: tests/imagenes_funcionarios.php, tests/funcionarios.php y
-tests/ui_operacion.js. Los dos primeros requieren el servidor y respaldo SQL
+tests/ui_operacion.js y tests/ui_registro_popup.js. Los dos primeros requieren el servidor y respaldo SQL
 verificado, usan datos temporales y comprueban su limpieza al terminar.
 
 ## RUT de funcionarios sin dígito verificador

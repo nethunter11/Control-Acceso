@@ -24,10 +24,11 @@ async function comprobarOperacion(sources){
   const fetch=async(url,options)=>{
     const payload=JSON.parse(options.body);calls.push({url,payload});
     if(url.endsWith('registrar_evento.php')){
+      const {imagen_url,...employee}=person().funcionario;
       if(failMutation)throw new Error('Sin conexión');
-      if(rejectMutation)return{ok:true,json:async()=>({ok:true,resultado:'RECHAZADO',guardado:false,motivo:'Movimiento duplicado',rut:payload.rut,funcionario:person().funcionario})};
+      if(rejectMutation)return{ok:true,json:async()=>({ok:true,resultado:'RECHAZADO',guardado:false,motivo:'Movimiento duplicado',rut:payload.rut,funcionario:employee})};
       presence=payload.tipo==='ENTRADA'?'DENTRO':'FUERA';
-      return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',guardado:true,rut:payload.rut,funcionario:person().funcionario,puesto:payload.puesto,fecha_hora:'2026-11-07 22:01:02',operador:'GUARDIA'})};
+      return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',guardado:true,rut:payload.rut,funcionario:employee,puesto:payload.puesto,fecha_hora:'2026-11-07 22:01:02',operador:'GUARDIA'})};
     }
     if(lookup==='network')throw new Error('Sin conexión');
     const data=lookup==='missing'?{ok:true,existe:false,rut:'12345678'}:lookup==='invalid'?{ok:false,error:'RUT inválido'}:person();
@@ -62,6 +63,7 @@ async function comprobarOperacion(sources){
   check(popups.length===1 && popups[0].tono==='salida' && popups[0].estado==='Fuera del recinto' && popups[0].fecha==='2026-11-07 22:01:02','La salida no muestra su aviso con la hora guardada.');
   check(popups[0].nombre.includes('Persona') && popups[0].rut==='12345678' && popups[0].campos[0][1]==='Unidad' && popups[0].campos[1][1]==='Cabo','El resultado pierde los datos personales.');
   check(!popups[0].rut.includes('-'),'El popup de funcionario añade un dígito verificador.');
+  check(popups[0].funcionario===true && popups[0].imagen_url===imageUrl,'La salida no envía al popup la imagen de la consulta previa.');
   check(el('rut').value==='12345678','Se limpió el RUT antes de cerrar el popup.');
   const receipt=el('resultado').innerHTML;await closePopup();
   check(el('rut').value==='' && document.activeElement===el('rut') && el('fichaFuncionario').innerHTML==='' && el('resultado').innerHTML===receipt,'El cierre no prepara el siguiente RUT o pierde el comprobante de la operación.');
@@ -82,11 +84,13 @@ async function comprobarOperacion(sources){
   el('consultaFuncionario').close();
   failMutation=false;await window.registrar('ENTRADA');
   check(popups.at(-1).tono==='entrada' && popups.at(-1).estado==='Dentro del recinto','La entrada no muestra su aviso de ingreso.');
+  check(popups.at(-1).funcionario===true && popups.at(-1).imagen_url===imageUrl,'La entrada no envía la fotografía al popup.');
   await closePopup();
   check(el('rut').value==='' && document.activeElement===el('rut'),'La entrada aprobada no prepara el siguiente registro.');
   el('rut').value='12345678';
   rejectMutation=true;await window.registrar('ENTRADA');
   check(popups.at(-1).tono==='rechazo' && popups.at(-1).detalle==='Movimiento duplicado' && !popups.at(-1).fecha,'El rechazo se muestra como aprobado o inventa una fecha de registro.');
+  check(popups.at(-1).imagen_url===imageUrl,'El rechazo de movimiento pierde la imagen del funcionario.');
   await closePopup();
   check(el('rut').value==='12345678' && document.activeElement===el('rut'),'Cerrar un rechazo borra el RUT que se debe revisar.');
   for(const candidate of ['https://example.com/foto.png',null]){

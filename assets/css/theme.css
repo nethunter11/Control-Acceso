@@ -353,8 +353,8 @@ dialog::backdrop { background: rgba(4,10,20,.72); }
   .consulta-dialog-icon { display: none; }
 }
 
-/* Imagen asociada únicamente a la consulta de funcionarios. */
-#consultaFuncionario { width: min(780px,calc(100% - 32px)); }
+/* Imagen de funcionarios en consulta y resultados de entrada o salida. */
+#consultaFuncionario, .registro-popup[data-funcionario="true"] { width: min(780px,calc(100% - 32px)); }
 .consulta-perfil { display: grid; grid-template-columns: 156px minmax(0,1fr); align-items: start; gap: 24px; }
 .consulta-retrato { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid var(--border2); border-radius: 10px; background: var(--panel2); color: var(--muted); }
 .consulta-retrato > i { font-size: 58px; }

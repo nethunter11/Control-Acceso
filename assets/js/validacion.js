@@ -98,6 +98,7 @@
       popupClosed=RegistroPopup.mostrar({
         titulo:(exit?'Salida':'Entrada')+(approved?' registrada':' rechazada'),subtitulo:'Registro de funcionario',
         tono:approved?(exit?'salida':'entrada'):'rechazo',etiqueta:'Datos del funcionario',
+        funcionario:true,imagen_url:person.funcionario.imagen_url,
         nombre:funcionario.nombres,rut:data.rut || payload.rut,activo:funcionario.estado?funcionario.estado==='ACTIVO':person.activo,
         campos:[['Unidad',funcionario.unidad],['Grado',funcionario.grado]],
         estado:approved?(exit?'Fuera del recinto':'Dentro del recinto'):'Movimiento rechazado',
