@@ -115,8 +115,8 @@
 
     const clock = document.getElementById('topbarDate');
     if (clock) {
-      const formatter = new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: FechasChile.zona });
-      const updateClock = () => { const now = new Date(); clock.dateTime = now.toISOString(); clock.textContent = formatter.format(now); };
+
+      const updateClock = () => { const now = new Date(); clock.dateTime = now.toISOString(); clock.textContent = FechasChile.fechaHora(now); };
       updateClock();
       setInterval(updateClock, 30000);
     }

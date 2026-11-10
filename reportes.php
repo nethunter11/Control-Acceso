@@ -133,7 +133,7 @@ $activePage = 'reportes';
     }
 
     function renderDias(items){
-      let labels = items.map(x => x.fecha);
+      let labels = items.map(x => FechasChile.fecha(x.fecha));
       let serie = items.map(x => Number(x.aprobados || 0));
       if (labels.length === 1) { labels = ['',labels[0],'']; serie = [null,serie[0],null]; }
       document.getElementById('chartDiasEmpty').hidden = items.length > 0;
@@ -193,7 +193,7 @@ $activePage = 'reportes';
         const ap = Number(r.aprobados||0);
         const pct = total>0 ? ((ap/total)*100).toFixed(1) : '0.0';
         html += `<tr>
-          <td>${escapeHtml(r.fecha)}</td>
+          <td>${escapeHtml(FechasChile.fecha(r.fecha))}</td>
           <td>${total}</td>
           <td>${ap}</td>
           <td>${Number(r.rechazados||0)}</td>

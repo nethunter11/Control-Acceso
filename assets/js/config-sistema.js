@@ -9,7 +9,7 @@
   const gib = value => number(value) ? format.format(value/1073741824) : '—';
   const clock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:FechasChile.zona});
   const chartClock = new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:FechasChile.zona});
-  const fullDate = new Intl.DateTimeFormat('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:FechasChile.zona});
+
   let last = null, chart = null, timer = null, inFlight = false, paused = false, stopped = false, authFailed = false, controller = null;
 
   function text(id,value){ byId(id).textContent = value; }
@@ -90,7 +90,7 @@
         responsive:true,maintainAspectRatio:false,animation:false,parsing:false,normalized:true,
         interaction:{mode:'nearest',intersect:false},
         plugins:{legend:{display:false},tooltip:{backgroundColor:colors.bg,borderColor:colors.grid,borderWidth:1,titleColor:'#effbff',bodyColor:'#effbff',padding:12,callbacks:{
-          title:items=>items.length?fullDate.format(new Date(items[0].parsed.x)):'',
+          title:items=>items.length?FechasChile.fechaHora(new Date(items[0].parsed.x),{segundos:true}):'',
           label:context=>context.dataset.label+': '+percent(context.parsed.y)
         }}},
         scales:{
@@ -107,7 +107,7 @@
     }
     byId('systemRecent').innerHTML=rows.slice(-8).reverse().map(row=>{
       const when=new Date(row.timestamp*1000);
-      return '<tr><td><time datetime="'+when.toISOString()+'" title="'+fullDate.format(when)+'">'+clock.format(when)+'</time></td><td>'+percent(row.cpu_percent)+'</td><td>'+percent(row.ram_percent)+'</td><td>'+percent(row.disk_percent)+'</td><td>'+(number(row.temperature_c)?format.format(row.temperature_c)+' °C':'—')+'</td></tr>';
+      return '<tr><td><time datetime="'+when.toISOString()+'" title="'+FechasChile.fechaHora(when,{segundos:true})+'">'+clock.format(when)+'</time></td><td>'+percent(row.cpu_percent)+'</td><td>'+percent(row.ram_percent)+'</td><td>'+percent(row.disk_percent)+'</td><td>'+(number(row.temperature_c)?format.format(row.temperature_c)+' °C':'—')+'</td></tr>';
     }).join('')||'<tr><td colspan="5">No hay lecturas en este periodo.</td></tr>';
   }
   function render(data){

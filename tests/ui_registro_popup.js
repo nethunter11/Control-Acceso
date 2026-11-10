@@ -1,4 +1,4 @@
-async function comprobarRegistroPopup(source) {
+async function comprobarRegistroPopup(source,dateSource) {
   let checks=0,now=0,nextId=0;
   const check=(yes,message)=>{if(!yes)throw new Error(message);checks++;};
   const timers=new Map(),parts=new Map(),events={};
@@ -8,12 +8,14 @@ async function comprobarRegistroPopup(source) {
   let created=0;
   const document={body:{append(){}},createElement(){created++;return dialog;}};
   const window={addEventListener(name,fn){events[name]=fn;}};
+  new Function('window',dateSource)(window);
   const timeout=(fn,delay)=>{timers.set(++nextId,{fn,at:now+delay});return nextId;};
   const advance=ms=>{now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now){timers.delete(id);timer.fn();}};
-  new Function('window','document','setTimeout','clearTimeout',source)(window,document,timeout,id=>timers.delete(id));
+  new Function('window','document','setTimeout','clearTimeout','FechasChile',source)(window,document,timeout,id=>timers.delete(id),window.FechasChile);
   const show=(tono='entrada')=>window.RegistroPopup.mostrar({tono,titulo:'Registro',nombre:'<img>Persona',rut:'12345678-5',activo:true,campos:[['Unidad','<script>Unidad'],['Grado','Cabo']],estado:'Dentro del recinto',detalle:'Detalle <b>',fecha:'2026-11-09 12:34:56'});
   let closed=false;const first=show();first.then(()=>{closed=true;});
   check(dialog.open && window.RegistroPopup.abierta() && created===1,'El resultado no abre una ventana modal.');
+  check(part('[data-popup-body]').innerHTML.includes('Registrado: 09-11-2026 12:34'),'La fecha del popup no usa el formato local.');
   check(part('[data-popup-body]').innerHTML.includes('&lt;img&gt;') && part('[data-popup-body]').innerHTML.includes('&lt;script&gt;') && !part('[data-popup-body]').innerHTML.includes('<img>'),'La ventana interpreta datos personales como HTML.');
   check(dialog.innerHTML.includes('4 segundos') && document.activeElement===part('[data-popup-close]'),'Falta el aviso de cierre automático o el foco de cierre.');
   advance(3999);await Promise.resolve();
@@ -38,7 +40,7 @@ async function comprobarRegistroPopup(source) {
 if(typeof module!=='undefined' && module.exports){
   module.exports=comprobarRegistroPopup;
   if(require.main===module){const fs=require('node:fs'),path=require('node:path');
-    comprobarRegistroPopup(fs.readFileSync(path.resolve(__dirname,'../assets/js/registro-popup.js'),'utf8'))
+    comprobarRegistroPopup(fs.readFileSync(path.resolve(__dirname,'../assets/js/registro-popup.js'),'utf8'),fs.readFileSync(path.resolve(__dirname,'../assets/js/fechas.js'),'utf8'))
       .then(result=>console.log('OK:',result.checks,'comprobaciones de ventanas temporales')).catch(error=>{console.error(error.message);process.exitCode=1;});
   }
 }

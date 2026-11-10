@@ -20,8 +20,8 @@ $activePage = 'visitas';
     <?php include __DIR__ . '/partials/topbar.php'; ?>
     <section class="content">
 
-      <div class="visits-layout">
-        <div class="card card-dark">
+      <div class="visits-layout" id="visitsLayout">
+        <div class="card card-dark" id="visitFormPanel">
           <div class="card-header card-header-dark"><div class="card-section-title"><i class="bi bi-person-plus" aria-hidden="true"></i><h2 class="h6 mb-0">Nueva visita</h2></div><div class="text-muted small">Completa los datos para registrar el ingreso.</div></div>
           <div class="card-body">
             <div class="row g-3">
@@ -46,7 +46,7 @@ $activePage = 'visitas';
           </div>
         </div>
         <div class="card card-dark">
-          <div class="card-header card-header-dark"><div class="d-flex justify-content-between align-items-center"><div><h2 class="h6 mb-0">Listado de visitas</h2><div class="text-muted small">Consulta ingresos y registra las salidas pendientes.</div></div><button id="btnVisitasRefresh" class="btn btn-sm btn-outline-light" onclick="cargarVisitas()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div>
+          <div class="card-header card-header-dark"><div class="d-flex justify-content-between align-items-center"><div><h2 class="h6 mb-0">Listado de visitas</h2><div class="text-muted small">Consulta ingresos y registra las salidas pendientes.</div></div><div class="d-flex gap-2 flex-wrap"><button id="btnVisitasExpand" type="button" class="btn btn-sm btn-outline-light" onclick="ampliarTablaVisitas()" aria-controls="visitFormPanel" aria-expanded="true"><i id="visitsExpandIcon" class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span id="visitsExpandLabel">Ampliar tabla</span></button><button id="btnVisitasRefresh" class="btn btn-sm btn-outline-light" onclick="cargarVisitas()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>Actualizar</button></div></div></div>
           <div class="card-body">
             <div class="btn-group mb-3" role="group" aria-label="Vista de visitas"><button id="view_dentro" type="button" class="btn btn-outline-light active" aria-pressed="true" onclick="cambiarVistaVisitas('dentro')">Dentro ahora</button><button id="view_historial" type="button" class="btn btn-outline-light" aria-pressed="false" onclick="cambiarVistaVisitas('historial')">Historial</button></div><p id="visitHelp" class="small text-muted"></p>
             <div class="row g-3">

@@ -288,8 +288,16 @@ dialog::backdrop { background: rgba(4,10,20,.72); }
 /* Tablas legibles y controles de consulta compartidos. */
 .table-responsive { max-height: min(65vh,640px); overflow: auto; }
 .table thead th { position: sticky; top: 0; z-index: 1; }
-.table td { overflow-wrap: anywhere; }
+.table td { overflow-wrap: normal; word-break: normal; }
 .table .date-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.table .nowrap-cell { white-space: nowrap; }
+.visits-layout.table-expanded { grid-template-columns: minmax(0,1fr); }
+.visits-table { min-width: 1180px; }
+.visits-table > :not(caption) > * > * { padding: 12px; }
+.visits-table thead th { z-index: 2; }
+.visits-table th:first-child, .visits-table td:first-child:not([colspan]) { min-width: 180px; max-width: 260px; position: sticky; left: 0; }
+.visits-table th:first-child { z-index: 3; }
+.visits-table td:first-child:not([colspan]) { z-index: 1; background-color: var(--panel); box-shadow: inset -1px 0 var(--border); }
 .table-toolbar, .table-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .table-pagination { justify-content: flex-start; }
 .rows-label { display: flex; align-items: center; gap: 8px; }

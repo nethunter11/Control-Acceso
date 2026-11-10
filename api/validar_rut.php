@@ -9,13 +9,13 @@ try {
   if(!rut_es_valido($rut)) {
     echo json_encode(['ok'=>false,'error'=>'RUT inválido (formato o dígito verificador).','rut'=>$rut],JSON_UNESCAPED_UNICODE);exit;
   }
-  // La ficha y el último aprobado se consultan en una sola sentencia.
+  // La ficha usa la misma última acción registrada que el control de duplicados.
   $query=db()->prepare("SELECT f.rut,f.nombres,f.unidad,f.grado,f.estado,
       r.id AS ultimo_id,r.tipo AS ultimo_tipo,r.fecha_hora AS ultimo_fecha,r.puesto AS ultimo_puesto,
       r.modo AS ultimo_modo,u.username AS ultimo_operador
     FROM funcionarios f
     LEFT JOIN registros_acceso r ON r.id=(SELECT a.id FROM registros_acceso a
-      WHERE a.rut=f.rut AND a.resultado='APROBADO' ORDER BY a.fecha_hora DESC,a.id DESC LIMIT 1)
+      WHERE a.rut=f.rut AND a.resultado='APROBADO' ORDER BY a.id DESC LIMIT 1)
     LEFT JOIN usuarios u ON u.id=r.operador_id
     WHERE f.rut=?");
   $query->execute([$rut]);$row=$query->fetch();

@@ -34,7 +34,7 @@
         <i class="bi ${inside?'bi-person-check':outside?'bi-box-arrow-right':'bi-dash-circle'}" aria-hidden="true"></i>
         <div><div class="func-label">Estado de acceso</div><div class="consulta-presencia-valor">${presence}</div><p>Según los movimientos aprobados registrados.</p></div>
       </div>
-      <p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Consultado: ${escape(data.checked_at)}</p>`;
+      <p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Consultado: ${escape(FechasChile.fechaHora(data.checked_at))}</p>`;
   }
   async function consult(rut) {
     const data=await post('validar_rut.php',{rut});
@@ -63,14 +63,14 @@
     const tone=ok?(exit?'exit':'entry'):'bad';
     const title=(exit?'Salida':'Entrada')+(ok?' registrada':' rechazada');
     const name=data.funcionario?.nombres || 'Persona no registrada';
-    const date=data.fecha_hora || (data.guardado===false?'Sin nuevo registro':'Fecha no disponible');
+    const date=data.fecha_hora?FechasChile.fechaHora(data.fecha_hora):(data.guardado===false?'Sin nuevo registro':'Fecha no disponible');
     el('resultado').innerHTML='<div class="event-card '+tone+'"><div class="event-head"><div><div class="func-label mb-1">Última operación</div><div class="event-title"><i class="bi '+(ok?(exit?'bi-box-arrow-right':'bi-box-arrow-in-right'):'bi-x-circle')+'" aria-hidden="true"></i> '+title+'</div></div><span class="event-badge '+(ok?(exit?'exit':'ok'):'bad')+'">'+(ok?'APROBADO':'RECHAZADO')+'</span></div><div class="event-value">'+escape(name)+'</div><div class="mono mt-1">'+escape(data.rut || requested.rut)+'</div><div class="event-subtitle">'+escape(data.puesto || requested.puesto)+' · '+(requested.modo==='VEHICULO'?'Vehicular':'Peatonal')+'</div><div class="small mt-2">'+escape(date)+(data.guardado && data.operador?' · '+escape(data.operador):'')+'</div>'+(data.motivo?'<div class="event-motivo">'+escape(data.motivo)+'</div>':'')+'</div>';
   }
   window.registrar=async function (type) {
     if(busy || el('consultaFuncionario').open || RegistroPopup.abierta() || !['ENTRADA','SALIDA'].includes(type))return;
     const payload={rut:el('rut').value.trim(),tipo:type,puesto:el('puesto').value,modo:mode};
     if(!payload.rut){note('Ingresa un RUT.','warning');el('rut').focus();return;}
-    let popupClosed;
+    let popupClosed,clearRutAfterClose=false;
     lock(true);
     try {
       const person=await consult(payload.rut);
@@ -83,6 +83,7 @@
       if(!data.ok){note(data.error || 'No se pudo registrar el movimiento.','danger');return;}
       renderResult(data,payload);
       const approved=data.resultado==='APROBADO',exit=type==='SALIDA';
+      clearRutAfterClose=approved && data.guardado===true;
       const funcionario=data.funcionario || person.funcionario;
       popupClosed=RegistroPopup.mostrar({
         titulo:(exit?'Salida':'Entrada')+(approved?' registrada':' rechazada'),subtitulo:'Registro de funcionario',
@@ -95,7 +96,14 @@
       try {await consult(payload.rut);} catch {el('fichaFuncionario').innerHTML='';note('La operación fue respondida; no se pudo actualizar la ficha. Consulta nuevamente.','warning');}
       if(typeof window.cargarDentro==='function')await window.cargarDentro();
     } catch(error){el('fichaFuncionario').innerHTML='';note(error.message+' Consulta el estado antes de volver a registrar.','danger');}
-    finally {lock(false);if(popupClosed)popupClosed.then(()=>{if(!RegistroPopup.abierta() && !busy)el('rut').focus();});}
+    finally {
+      lock(false);
+      if(popupClosed)popupClosed.then(()=>{
+        if(RegistroPopup.abierta() || busy)return;
+        if(clearRutAfterClose){el('rut').value='';el('fichaFuncionario').textContent='';}
+        el('rut').focus();
+      });
+    }
   };
   window.setModo=function (value) {
     if(busy || !['PEATONAL','VEHICULO'].includes(value))return;

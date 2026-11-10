@@ -44,7 +44,7 @@
         <dl class="consulta-datos">${(data.campos || []).map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value || 'Sin registro')+'</dd></div>').join('')}</dl>
       </section>
       <div class="consulta-presencia registro-popup-estado"><i class="bi ${style.icon}" aria-hidden="true"></i><div><div class="func-label">Estado de acceso</div><div class="consulta-presencia-valor">${escape(data.estado)}</div>${data.detalle?'<p>'+escape(data.detalle)+'</p>':''}</div><span class="event-badge ${style.badge}">${tone==='rechazo'?'RECHAZADO':'APROBADO'}</span></div>
-      ${data.fecha?'<p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Registrado: '+escape(data.fecha)+'</p>':''}`;
+      ${data.fecha?'<p class="consulta-actualizacion"><i class="bi bi-clock" aria-hidden="true"></i>Registrado: '+escape(FechasChile.fechaHora(data.fecha))+'</p>':''}`;
     const closed=new Promise(resolve=>{finish=resolve;});
     if(!dialog.open)dialog.showModal();
     dialog.querySelector('[data-popup-close]').focus();

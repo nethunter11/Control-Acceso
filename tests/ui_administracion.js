@@ -1,5 +1,6 @@
 async function comprobarAdministracion(sources,runtime) {
   let checks=0;
+  const calendar={};new Function('window',sources.dates)(calendar);const dates=calendar.FechasChile;
   const tablesFor=document=>{const window={};new Function('window','document',sources.tables)(window,document);return window.Tablas;};
   const check=(condition,message)=>{if(!condition)throw new Error(message);checks++;};
   const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
@@ -50,14 +51,23 @@ async function comprobarAdministracion(sources,runtime) {
       }
       return{ok:true,json:async()=>({ok:true,items:rows,total:rows.length,page:1,pages:1,dentro:rows.length,checked_at:'2026-11-07 23:00:00'})};
     };
+    let scroller=null,tableHtml='';
+    element('tabla').querySelector=()=>scroller;
+    Object.defineProperty(element('tabla'),'innerHTML',{get:()=>tableHtml,set:value=>{tableHtml=value;scroller={scrollLeft:0,focus(){document.activeElement=this;}};}});
     element('f_fecha').value='2026-11-07';
-    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile','Tablas','RegistroPopup',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida,entry:registrarEntrada,mode:setModoV};')(
+    const api=new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Dialogos','FechasChile','Tablas','RegistroPopup',sources.visits+';return {view:cambiarVistaVisitas,load:cargarVisitas,exit:marcarSalida,entry:registrarEntrada,mode:setModoV,expand:ampliarTablaVisitas};')(
       window,document,fetch,runtime.URLSearchParams,runtime.AbortController,(fn,delay)=>{timers.set(++timerId,{fn,delay});return timerId;},id=>timers.delete(id),
-      {confirmar:async(title,text)=>{confirmations.push(text);return allowExit;}},{hoy:()=>'2026-11-07'},tablesFor(document),{abierta:()=>popupOpen,mostrar:data=>{popups.push(data);return Promise.resolve();}});
+      {confirmar:async(title,text)=>{confirmations.push(text);return allowExit;}},{...dates,hoy:()=>'2026-11-07'},tablesFor(document),{abierta:()=>popupOpen,mostrar:data=>{popups.push(data);return Promise.resolve();}});
     await api.view('dentro');
     check(!calls.at(-1).url.includes('fecha=') && element('f_fecha').disabled,'Dentro ahora filtra por el día.');
-    check(element('tabla').innerHTML.includes('2001-02-03') && element('tabla').innerHTML.includes('&lt;img&gt;') && !element('tabla').innerHTML.includes('<img>'),'Fecha antigua o escape HTML incorrecto.');
+    check(element('tabla').innerHTML.includes('03-02-2001 23:00') && element('tabla').innerHTML.includes('&lt;img&gt;') && !element('tabla').innerHTML.includes('<img>'),'Fecha antigua o escape HTML incorrecto.');
     check(element('tabla').innerHTML.includes('Sin registro'),'Se inventa un operador antiguo.');
+    scroller.scrollLeft=180;document.activeElement=scroller;await api.load();
+    check(scroller.scrollLeft===180 && document.activeElement===scroller,'Actualizar pierde el desplazamiento horizontal o el foco de la tabla.');
+    element('v_nombre').value='Nombre en edición';api.expand();
+    check(element('visitFormPanel').hidden && element('visitsExpandLabel').textContent==='Mostrar formulario','Ampliar no libera el espacio del formulario.');
+    api.expand();
+    check(!element('visitFormPanel').hidden && element('v_nombre').value==='Nombre en edición','Restaurar el formulario pierde los datos ingresados.');
     await api.view('historial');
     check(calls.at(-1).url.includes('fecha=2026-11-07') && !element('f_fecha').disabled,'El historial no filtra por fecha.');
     await api.exit(1);
@@ -144,7 +154,7 @@ if(typeof module!=='undefined' && module.exports) {
   module.exports=comprobarAdministracion;
   if(require.main===module) {
     const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'..');
-    const files={session:'assets/js/sesion.js',visits:'assets/js/visitas.js',staff:'assets/js/funcionarios.js',dialogs:'assets/js/dialogos.js',users:'assets/js/config-gestion.js',tables:'assets/js/tablas.js'};
+    const files={dates:'assets/js/fechas.js',session:'assets/js/sesion.js',visits:'assets/js/visitas.js',staff:'assets/js/funcionarios.js',dialogs:'assets/js/dialogos.js',users:'assets/js/config-gestion.js',tables:'assets/js/tablas.js'};
     const sources=Object.fromEntries(Object.entries(files).map(([key,file])=>[key,fs.readFileSync(path.join(root,file),'utf8')]));
     comprobarAdministracion(sources,{URL,Headers,URLSearchParams,AbortController,TextDecoder}).then(result=>console.log('OK:',result.checks,'comprobaciones de administración')).catch(error=>{console.error(error.message);process.exitCode=1;});
   }

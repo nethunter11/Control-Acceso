@@ -85,6 +85,13 @@ Si dos puestos solicitan la misma entrada o salida a la vez, una solicitud puede
 aprobarse y la siguiente comprueba el estado actualizado antes de responder.
 Después de una salida se puede registrar una nueva entrada normalmente.
 
+La presencia operativa utiliza la última acción APROBADA registrada (ID más alto),
+no la fecha más alta del historial. Así, una salida importada con fecha futura o
+un retroceso del reloj no permite entradas repetidas. Los rechazos no cambian la
+presencia. La ficha y Personal dentro usan este mismo criterio. No se reescriben
+los movimientos anteriores; el resumen histórico conserva su orden cronológico.
+Prueba de regresión: `C:\xampp\php\php.exe tests/duplicados_acceso.php`.
+
 Las entradas de visitas también se coordinan por RUT. Para sus salidas, solo se
 informa `APROBADO` si la solicitud cambió efectivamente la visita de `DENTRO` a
 `SALIO`. Así se evita informar varias salidas aprobadas para una sola visita.
@@ -258,8 +265,9 @@ Prueba: `C:\xampp\php\php.exe tests\historial.php` (requiere respaldo SQL verifi
 
 ### Personal dentro
 
-Se consulta el último movimiento aprobado de todo el historial de cada RUT,
-ordenado por fecha e ID. Los ingresos sin salida permanecen después de medianoche.
+Se consulta el último movimiento aprobado registrado de cada RUT (ID más alto).
+Los ingresos sin una salida posterior registrada permanecen después de medianoche.
+
 La desactivación administrativa no oculta a alguien que continúa dentro.
 La pantalla actualiza cada 15 segundos mientras está visible, muestra la última
 consulta correcta y avisa si no puede actualizar. El contador conserva el total
@@ -270,6 +278,11 @@ Prueba: `C:\xampp\php\php.exe tests\personal_dentro.php`.
 La aplicación usa `America/Santiago` en PHP y JavaScript. Cada conexión de la
 aplicación a MariaDB recibe el desfase vigente calculado por PHP; no modifica
 el huso global de XAMPP ni necesita cargar tablas horarias de MariaDB.
+Las fechas visibles usan DD-MM-YYYY HH:mm. Las lecturas técnicas de Sistema
+conservan segundos cuando corresponda. El formato es de presentación: filtros,
+respuestas de las API, fechas de la base y exportaciones CSV conservan sus valores
+y formatos originales. Un DATETIME local de Chile se muestra sin convertirlo de
+huso; los instantes que incluyen zona horaria se convierten a America/Santiago.
 Los filtros usan días civiles completos: desde las 00:00:00 inclusive hasta
 las 00:00:00 del día siguiente exclusive. Se rechazan fechas imposibles y rangos
 invertidos con HTTP 400. Los movimientos existentes conservan sus DATETIME locales;
@@ -357,6 +370,9 @@ cierra a los 4 segundos (también admite X, Cerrar o Escape). Se aplica a entrad
 y salidas de funcionarios y visitas. Conserva los datos personales destacados
 y la hora guardada; los errores técnicos permanecen en
 pantalla. La consulta simple no tiene cierre automático.
+Al cerrar el resultado de una entrada o salida aprobada, se limpia el RUT y el
+cursor queda listo para el siguiente funcionario. Consultas, cancelaciones y
+rechazos conservan el RUT. El comprobante de la última operación permanece visible.
 El resultado conserva la identidad, la fecha guardada y el operador hasta la
 siguiente operación o Limpiar. Las entradas usan verde, las salidas ámbar y los
 rechazos rojo. Los cambios de permisos se confirman dentro de la aplicación y

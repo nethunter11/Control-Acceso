@@ -5,7 +5,7 @@ require_api_roles(['ADMIN','GUARDIA']);
 try{
   $pdo=db();$search=campo_texto($_GET['q'] ?? $_GET['rut'] ?? '','búsqueda',120);
   $puesto=campo_texto($_GET['puesto'] ?? '','puesto',60);
-  $cte="WITH ultimos AS (SELECT rut,tipo,modo,puesto,fecha_hora,id,ROW_NUMBER() OVER (PARTITION BY rut ORDER BY fecha_hora DESC,id DESC) AS rn FROM registros_acceso WHERE resultado='APROBADO')";
+  $cte="WITH ultimos AS (SELECT rut,tipo,modo,puesto,fecha_hora,id,ROW_NUMBER() OVER (PARTITION BY rut ORDER BY id DESC) AS rn FROM registros_acceso WHERE resultado='APROBADO')";
   $from=" FROM ultimos t INNER JOIN funcionarios f ON f.rut=t.rut WHERE t.rn=1 AND t.tipo='ENTRADA'";
   $params=[];
   $pdo->beginTransaction();

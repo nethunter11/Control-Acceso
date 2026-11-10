@@ -78,6 +78,15 @@ async function marcarSalida(id) {
     if(popupClosed)popupClosed.then(()=>{if(!RegistroPopup.abierta())document.getElementById('btnVisitasRefresh').focus();});
   }
 }
+function ampliarTablaVisitas() {
+  const form=document.getElementById('visitFormPanel');
+  const expanded=!form.hidden;
+  form.hidden=expanded;
+  document.getElementById('visitsLayout').classList.toggle('table-expanded',expanded);
+  document.getElementById('btnVisitasExpand').setAttribute('aria-expanded',String(!expanded));
+  document.getElementById('visitsExpandLabel').textContent=expanded?'Mostrar formulario':'Ampliar tabla';
+  document.getElementById('visitsExpandIcon').className='bi '+(expanded?'bi-layout-sidebar':'bi-arrows-fullscreen');
+}
 function cambiarVistaVisitas(view) {
   visitsView=view;
   for(const mode of ['dentro','historial']) {
@@ -110,14 +119,20 @@ async function cargarVisitas(page=1) {
     if(!response.ok || !data.ok) throw new Error(data.error || 'No se pudo consultar.');
     if(visitsController!==controller) return;
     visitsPage=data.page; visitsRows=new Map(data.items.map(row=>[Number(row.id),row]));
-    let html='<div class="table-responsive"><table class="table table-dark table-hover align-middle mb-0"><thead><tr><th>Nombre</th><th>RUT</th><th>Entrada</th><th>Operador entrada</th><th>Salida</th><th>Operador salida</th><th>Modo</th><th>Patente</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+    let html='<div class="table-responsive" tabindex="0" role="region" aria-label="Tabla de visitas con desplazamiento horizontal"><table class="table table-dark table-hover align-middle mb-0 visits-table"><thead><tr><th>Nombre</th><th>RUT</th><th>Entrada</th><th>Operador entrada</th><th>Salida</th><th>Operador salida</th><th>Modo</th><th>Patente</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
     for(const row of data.items) {
       const inside=row.estado==='DENTRO';
-      html+='<tr><td>'+visitEscape(row.nombre)+'</td><td class="mono">'+visitEscape(row.rut)+'</td><td>'+visitEscape(row.fecha_hora_entrada)+'</td><td>'+visitEscape(row.operador_entrada || 'Sin registro')+'</td><td>'+visitEscape(row.fecha_hora_salida || '—')+'</td><td>'+visitEscape(row.fecha_hora_salida ? row.operador_salida || 'Sin registro' : '—')+'</td><td>'+visitEscape(row.modo)+'</td><td>'+visitEscape(row.patente || '—')+'</td><td><span class="badge '+(inside?'text-bg-warning':'text-bg-secondary')+'">'+(inside?'DENTRO':'SALIÓ')+'</span></td><td>'+(inside?'<button id="btnSalidaVisita_'+Number(row.id)+'" type="button" class="btn btn-sm btn-warning" data-exit="'+Number(row.id)+'"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Salida</button>':'—')+'</td></tr>';
+      const mode=row.modo==='VEHICULO'?'Vehicular':row.modo==='PEATONAL'?'Peatonal':row.modo || '—';
+      html+='<tr><td>'+visitEscape(row.nombre)+'</td><td class="mono">'+visitEscape(row.rut)+'</td><td class="date-cell">'+visitEscape(FechasChile.fechaHora(row.fecha_hora_entrada))+'</td><td class="nowrap-cell">'+visitEscape(row.operador_entrada || 'Sin registro')+'</td><td class="date-cell">'+visitEscape(FechasChile.fechaHora(row.fecha_hora_salida))+'</td><td class="nowrap-cell">'+visitEscape(row.fecha_hora_salida ? row.operador_salida || 'Sin registro' : '—')+'</td><td class="nowrap-cell">'+visitEscape(mode)+'</td><td class="nowrap-cell">'+visitEscape(row.patente || '—')+'</td><td><span class="badge '+(inside?'text-bg-warning':'text-bg-secondary')+'">'+(inside?'DENTRO':'SALIÓ')+'</span></td><td>'+(inside?'<button id="btnSalidaVisita_'+Number(row.id)+'" type="button" class="btn btn-sm btn-warning" data-exit="'+Number(row.id)+'"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Salida</button>':'—')+'</td></tr>';
     }
     if(!data.items.length) html+='<tr><td colspan="10"><div class="table-empty">No hay visitas para esta consulta.</div></td></tr>';
-    document.getElementById('tabla').innerHTML=html+'</tbody></table></div>';
-    document.getElementById('visitSummary').textContent='Actualizado: '+data.checked_at+' · Dentro ahora: '+data.dentro+' · '+Tablas.resumen(data);
+    const container=document.getElementById('tabla');
+    const previous=container.querySelector('.table-responsive');
+    const scrollLeft=previous?.scrollLeft || 0,restoreFocus=previous && document.activeElement===previous;
+    container.innerHTML=html+'</tbody></table></div>';
+    const current=container.querySelector('.table-responsive');
+    if(current){if(restoreFocus)current.focus({preventScroll:true});current.scrollLeft=scrollLeft;}
+    document.getElementById('visitSummary').textContent='Actualizado: '+FechasChile.fechaHora(data.checked_at)+' · Dentro ahora: '+data.dentro+' · '+Tablas.resumen(data);
     Tablas.estado('visits',data);
   } catch(error) {
     if(visitsController===controller) document.getElementById('visitSummary').textContent='La lista no está actualizada. '+(error.name==='AbortError'?'Consulta interrumpida o sin respuesta.':error.message);

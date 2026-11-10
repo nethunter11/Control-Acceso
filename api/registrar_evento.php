@@ -70,7 +70,7 @@ try {
     exit;
   }
 
-  // Comprobar el último movimiento y guardar el siguiente bajo el mismo bloqueo.
+  // La última acción aprobada registrada determina la presencia, aunque haya fechas importadas o futuras.
   $pdo = db();
   $response = ejecutar_por_rut($pdo, 'funcionarios', $rut, function () use ($pdo, $rut, $tipo, $modo, $puesto, $operadorId): array {
     $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
@@ -93,7 +93,7 @@ try {
         SELECT tipo, fecha_hora
         FROM registros_acceso
         WHERE rut = ? AND resultado = 'APROBADO'
-        ORDER BY fecha_hora DESC, id DESC
+        ORDER BY id DESC
         LIMIT 1
       ");
       $stLast->execute([$rut]);

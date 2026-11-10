@@ -19,6 +19,19 @@ async function comprobarInterfazAccesos(sources) {
   try { dates.desplazar('2026-02-30',1); } catch { invalid = true; }
   check(invalid,'Se aceptó una fecha imposible.');
 
+  for(const [value,expected] of [
+    ['2026-11-10 07:56:23','10-11-2026 07:56'],
+    ['2026-07-10 07:56:23','10-07-2026 07:56'],
+    ['2026-11-10 00:00:00','10-11-2026 00:00'],
+    ['2024-02-29','29-02-2024'],
+    ['2026-11-10T02:56:23Z','09-11-2026 23:56'],
+    ['2026-07-10T03:56:23Z','09-07-2026 23:56'],
+    ['2026-11-10T07:56:23-03:00','10-11-2026 07:56'],
+    [null,'—'],['','—'],['Sin registro','Sin registro'],['2026-02-30 10:00:00','2026-02-30 10:00:00'],['2026-02-30T10:00:00Z','2026-02-30T10:00:00Z']
+  ])check(dates.fechaHora(value)===expected,'Formato incorrecto o desplazamiento de hora civil: '+value);
+  check(dates.fechaHora(new Date('2026-11-10T10:56:23Z'))==='10-11-2026 07:56','Un instante Date no se muestra en Chile.');
+  check(dates.fechaHora('2026-11-10 07:56:23',{segundos:true})==='10-11-2026 07:56:23','La lectura detallada pierde los segundos.');
+  check(dates.fecha('2026-11-10')==='10-11-2026' && dates.fecha('2026-11-10T02:30:00Z')==='09-11-2026','El día visible no conserva su significado.');
   const fields = new Map();
   const element = id => {
     if (!fields.has(id)) fields.set(id,{value:'',textContent:'',innerHTML:'',events:{},addEventListener(name,fn){ this.events[name]=fn; }});

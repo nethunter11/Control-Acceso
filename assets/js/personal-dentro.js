@@ -17,10 +17,10 @@
       page=data.page;
       const selected=el('d_puesto').value;el('d_puesto').innerHTML='<option value="">Todos</option>'+(data.puestos || []).map(value=>'<option value="'+escape(value)+'">'+escape(value)+'</option>').join('');el('d_puesto').value=selected;
       let html='<div class="table-responsive"><table class="table table-dark table-hover align-middle mb-0"><thead><tr><th>Nombre</th><th>RUT</th><th>Unidad</th><th>Grado</th><th>Modo</th><th>Puesto</th><th>Ingreso registrado</th></tr></thead><tbody>';
-      for(const row of data.items)html+='<tr><td>'+escape(row.nombres)+(row.estado==='INACTIVO'?'<div class="small text-warning">Funcionario inactivo</div>':'')+'</td><td class="mono">'+escape(row.rut)+'</td><td>'+escape(row.unidad)+'</td><td>'+escape(row.grado)+'</td><td>'+escape(row.modo)+'</td><td>'+escape(row.puesto)+'</td><td class="date-cell">'+escape(row.ultima_hora)+'</td></tr>';
+      for(const row of data.items)html+='<tr><td>'+escape(row.nombres)+(row.estado==='INACTIVO'?'<div class="small text-warning">Funcionario inactivo</div>':'')+'</td><td class="mono">'+escape(row.rut)+'</td><td>'+escape(row.unidad)+'</td><td>'+escape(row.grado)+'</td><td>'+escape(row.modo)+'</td><td>'+escape(row.puesto)+'</td><td class="date-cell">'+escape(FechasChile.fechaHora(row.ultima_hora))+'</td></tr>';
       if(!data.items.length)html+='<tr><td colspan="7"><div class="table-empty">No se encontró personal para esta consulta.</div></td></tr>';
       el('tablaDentro').innerHTML=html+'</tbody></table></div>';
-      el('cntDentro').textContent=data.total_dentro;el('d_fecha_text').textContent=data.checked_at;
+      el('cntDentro').textContent=data.total_dentro;el('d_fecha_text').textContent=FechasChile.fechaHora(data.checked_at);
       el('d_estado').textContent=Tablas.resumen(data)+' · Total dentro: '+data.total_dentro+'. Actualización automática cada 15 segundos.';Tablas.estado('inside',data);
     }catch(error){if(controller===request && !stopped){el('cntDentro').textContent='—';el('d_estado').textContent='La lista no está actualizada. '+(error.name==='AbortError'?'Consulta interrumpida o sin respuesta.':error.message);}else if(stopped){el('cntDentro').textContent='—';el('d_estado').textContent=error.message;}}
     finally{clearTimeout(timeout);if(controller===request){controller=null;el('tablaDentro').setAttribute('aria-busy','false');if(!document.hidden && !stopped)timer=setTimeout(()=>window.cargarDentro(),15000);}}
