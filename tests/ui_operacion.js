@@ -19,7 +19,8 @@ async function comprobarOperacion(sources){
   let popupOpen=false,popupResolve=null;
   const closePopup=async()=>{popupOpen=false;const resolve=popupResolve;popupResolve=null;resolve?.();for(let i=0;i<8;i++)await Promise.resolve();};
   let imageUrl='/Control-Acceso/img/funcionarios/Imagen_mujer.png';
-  const person=()=>({ok:true,existe:true,activo:true,rut:'12345678',funcionario:{rut:'12345678',nombres:'<script>Persona</script>',unidad:'Unidad',grado:'Cabo',imagen_url:imageUrl},presencia:presence,ultimo_movimiento:{tipo:presence==='DENTRO'?'ENTRADA':'SALIDA',fecha_hora:'2001-02-03 23:00:00',puesto:'Pórtico Norte',operador:'GUARDIA'},checked_at:'2026-11-07 22:00:00'});
+  let assignedPlate='PTCL21';
+  const person=()=>({ok:true,existe:true,activo:true,rut:'12345678',funcionario:{rut:'12345678',nombres:'<script>Persona</script>',unidad:'Unidad',grado:'Cabo',patentes:assignedPlate,imagen_url:imageUrl},presencia:presence,ultimo_movimiento:{tipo:presence==='DENTRO'?'ENTRADA':'SALIDA',fecha_hora:'2001-02-03 23:00:00',puesto:'Pórtico Norte',operador:'GUARDIA'},checked_at:'2026-11-07 22:00:00'});
   const window={cargarDentro:async()=>{refreshes++;}};
   const fetch=async(url,options)=>{
     const payload=JSON.parse(options.body);calls.push({url,payload});
@@ -28,7 +29,7 @@ async function comprobarOperacion(sources){
       if(failMutation)throw new Error('Sin conexión');
       if(rejectMutation)return{ok:true,json:async()=>({ok:true,resultado:'RECHAZADO',guardado:false,motivo:'Movimiento duplicado',rut:payload.rut,funcionario:employee})};
       presence=payload.tipo==='ENTRADA'?'DENTRO':'FUERA';
-      return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',guardado:true,rut:payload.rut,funcionario:employee,puesto:payload.puesto,fecha_hora:'2026-11-07 22:01:02',operador:'GUARDIA'})};
+      return{ok:true,json:async()=>({ok:true,resultado:'APROBADO',guardado:true,patente:payload.modo==='VEHICULO'?assignedPlate:null,rut:payload.rut,funcionario:employee,puesto:payload.puesto,fecha_hora:'2026-11-07 22:01:02',operador:'GUARDIA'})};
     }
     if(lookup==='network')throw new Error('Sin conexión');
     const data=lookup==='missing'?{ok:true,existe:false,rut:'12345678'}:lookup==='invalid'?{ok:false,error:'RUT inválido'}:person();
@@ -101,6 +102,23 @@ async function comprobarOperacion(sources){
   imageUrl='/Control-Acceso/img/funcionarios/Imagen_hombre.png';await window.soloConsultar();
   check(el('fichaFuncionario').innerHTML.includes(imageUrl),'La consulta no cambia a la imagen del funcionario siguiente.');
   el('consultaFuncionario').close();
+  rejectMutation=false;el('rut').value='12345678';
+  const previousMovements=calls.filter(call=>call.url.endsWith('registrar_evento.php')).length;
+  await window.setModo('VEHICULO');
+  check(!el('patenteFuncionarioCampo').hidden && el('patenteFuncionario').value==='PTCL21','Vehicular no carga la patente del padrón.');
+  check(calls.filter(call=>call.url.endsWith('registrar_evento.php')).length===previousMovements,'Cambiar el modo guarda un movimiento.');
+  el('patenteFuncionario').value='ZZZZ99';await window.registrar('ENTRADA');
+  check(confirmations.at(-1).text.includes('Patente PTCL21') && popups.at(-1).campos.some(([key,value])=>key==='Patente' && value==='PTCL21'),'La confirmación o el popup pierden la patente asignada.');
+  check(el('resultado').innerHTML.includes('Patente PTCL21') && !('patente' in calls.findLast(call=>call.url.endsWith('registrar_evento.php')).payload),'Se usa la patente editable del cliente en lugar de la respuesta guardada.');
+  await closePopup();check(el('patenteFuncionario').value==='','El cierre conserva la patente del funcionario anterior.');
+  assignedPlate=null;el('rut').value='12345678';
+  const beforeMissing=calls.filter(call=>call.url.endsWith('registrar_evento.php')).length;await window.registrar('ENTRADA');
+  check(calls.filter(call=>call.url.endsWith('registrar_evento.php')).length===beforeMissing && el('consultaMensaje').innerHTML.includes('no tiene patente'),'Se intenta registrar un vehículo sin patente.');
+  await window.setModo('PEATONAL');
+  check(el('patenteFuncionarioCampo').hidden && el('patenteFuncionario').value==='','Peatonal conserva una patente activa.');
+  await window.registrar('ENTRADA');
+  check(!popups.at(-1).campos.some(([key])=>key==='Patente'),'El popup peatonal muestra una patente.');
+  await closePopup();
   window.limpiar();check(el('rut').value==='' && el('resultado').textContent==='','Limpiar no reinicia la operación.');
   check(!sources.users.includes('alert(') && !sources.users.includes('prompt(') && !sources.validation.includes('confirm('),'Persisten diálogos nativos.');
   new Function(sources.users);new Function(sources.validation);

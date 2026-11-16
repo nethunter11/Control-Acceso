@@ -46,12 +46,12 @@ function preparar_exportacion_csv(array $query): array {
       $sql = 'SELECT id, username, rol, activo FROM usuarios ORDER BY id';
       break;
     case 'funcionarios':
-      $columns = ['rut','nombres','unidad','grado','estado','fecha_actualizacion'];
-      $sql = 'SELECT rut, nombres, unidad, grado, estado, fecha_actualizacion FROM funcionarios ORDER BY nombres, rut';
+      $columns = ['rut','nombres','unidad','grado','estado','fecha_actualizacion','patentes'];
+      $sql = 'SELECT rut, nombres, unidad, grado, estado, fecha_actualizacion, patentes FROM funcionarios ORDER BY nombres, rut';
       break;
     case 'registros_acceso':
-      $columns = ['id','rut','tipo','modo','fecha_hora','puesto','operador_id','operador','resultado','motivo'];
-      $sql = 'SELECT r.id, r.rut, r.tipo, r.modo, r.fecha_hora, r.puesto, r.operador_id, u.username AS operador, r.resultado, r.motivo FROM registros_acceso r LEFT JOIN usuarios u ON u.id=r.operador_id';
+      $columns = ['id','rut','tipo','modo','fecha_hora','puesto','operador_id','operador','resultado','motivo','patente'];
+      $sql = 'SELECT r.id, r.rut, r.tipo, r.modo, r.fecha_hora, r.puesto, r.operador_id, u.username AS operador, r.resultado, r.motivo, r.patente FROM registros_acceso r LEFT JOIN usuarios u ON u.id=r.operador_id';
       if ($start !== null) {
         $sql .= ' WHERE r.fecha_hora >= ? AND r.fecha_hora < ?';
         $params = [$start,$end];

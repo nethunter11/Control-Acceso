@@ -21,9 +21,9 @@
       const data=await request(null,'?'+params);
       if(current!==sequence) return;
       page=data.page; records=new Map(data.items.map(row=>[row.rut,row]));
-      let html='<div class="table-responsive"><table class="table table-dark table-hover align-middle mb-0"><thead><tr><th>RUT</th><th>Nombre</th><th>Unidad</th><th>Grado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
-      for(const row of data.items) html+='<tr><td class="mono">'+escape(row.rut)+'</td><td>'+escape(row.nombres)+'</td><td>'+escape(row.unidad || '—')+'</td><td>'+escape(row.grado || '—')+'</td><td><span class="badge '+(row.estado==='ACTIVO'?'text-bg-success':'text-bg-secondary')+'">'+escape(row.estado)+'</span></td><td><button type="button" class="btn btn-sm btn-outline-light" data-edit="'+escape(row.rut)+'">Editar</button></td></tr>';
-      if(!data.items.length) html+='<tr><td colspan="6"><div class="table-empty">No hay funcionarios para esta búsqueda.</div></td></tr>';
+      let html='<div class="table-responsive"><table class="table table-dark table-hover align-middle mb-0"><thead><tr><th>RUT</th><th>Nombre</th><th>Unidad</th><th>Grado</th><th>Patente</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+      for(const row of data.items) html+='<tr><td class="mono">'+escape(row.rut)+'</td><td>'+escape(row.nombres)+'</td><td>'+escape(row.unidad || '—')+'</td><td>'+escape(row.grado || '—')+'</td><td class="mono text-nowrap">'+escape(row.patentes || '—')+'</td><td><span class="badge '+(row.estado==='ACTIVO'?'text-bg-success':'text-bg-secondary')+'">'+escape(row.estado)+'</span></td><td><button type="button" class="btn btn-sm btn-outline-light" data-edit="'+escape(row.rut)+'">Editar</button></td></tr>';
+      if(!data.items.length) html+='<tr><td colspan="7"><div class="table-empty">No hay funcionarios para esta búsqueda.</div></td></tr>';
       el('staffTable').innerHTML=html+'</tbody></table></div>';
       message('staffListSummary',Tablas.resumen(data));Tablas.estado('staff',data);
     } catch(error) {if(current===sequence) message('staffListSummary',error.message,true);}
@@ -31,7 +31,7 @@
   function edit(rut) {
     const row=records.get(rut); if(!row) return;
     revision=row.revision;
-    for(const field of ['rut','nombres','unidad','grado','estado','imagen']) el('sf_'+field).value=row[field] ?? '';
+    for(const field of ['rut','nombres','unidad','grado','estado','imagen','patentes']) el('sf_'+field).value=row[field] ?? '';
     el('sf_rut').readOnly=true; el('staffFormTitle').textContent='Editar funcionario · '+row.rut;
     message('staffMessage','Los cambios se aplican al guardar.');
     el('staffForm').scrollIntoView({block:'center'}); el('sf_nombres').focus();
@@ -39,7 +39,7 @@
   async function save(event) {
     event.preventDefault(); if(el('staffSave').disabled) return;
     const data={accion:'guardar',revision};
-    for(const field of ['rut','nombres','unidad','grado','estado','imagen']) data[field]=el('sf_'+field).value.trim();
+    for(const field of ['rut','nombres','unidad','grado','estado','imagen','patentes']) data[field]=el('sf_'+field).value.trim();
     if(data.estado==='INACTIVO' && !await Dialogos.confirmar('Guardar funcionario inactivo',data.nombres+' · '+data.rut+'. No podrá registrar nuevos ingresos.')) return;
     el('staffSave').disabled=true;
     try {
@@ -61,11 +61,11 @@
       const view=data.preview; preview=data.id?{id:data.id,crear:view.crear,actualizar:view.actualizar}:null;
       el('staffPreviewPanel').hidden=false;
       el('staffPreviewSummary').textContent=view.crear+' nuevos · '+view.actualizar+' existentes · '+view.errores+' errores. La vista previa dura 10 minutos.';
-      let html='<div class="table-responsive"><table class="table table-dark align-middle"><thead><tr><th>Fila</th><th>RUT</th><th>Nombre</th><th>Unidad</th><th>Grado</th><th>Estado</th><th>Acción / observación</th></tr></thead><tbody>';
+      let html='<div class="table-responsive"><table class="table table-dark align-middle"><thead><tr><th>Fila</th><th>RUT</th><th>Nombre</th><th>Unidad</th><th>Grado</th><th>Patente</th><th>Estado</th><th>Acción / observación</th></tr></thead><tbody>';
       for(const row of view.rows) {
         const item=row.data || {};
         const changes=row.cambios.length?'<details><summary>'+row.cambios.length+' cambios</summary><ul>'+row.cambios.map(change=>'<li>'+escape(change.campo)+': '+escape(change.anterior || 'vacío')+' → '+escape(change.nuevo || 'vacío')+'</li>').join('')+'</ul></details>':'';
-        html+='<tr><td>'+row.fila+'</td><td>'+escape(item.rut || '—')+'</td><td>'+escape(item.nombres || '—')+'</td><td>'+escape(item.unidad || '—')+'</td><td>'+escape(item.grado || '—')+'</td><td>'+escape(item.estado || '—')+'</td><td>'+(row.error?'<span class="text-danger">'+escape(row.error)+'</span>':escape(row.accion)+changes)+'</td></tr>';
+        html+='<tr><td>'+row.fila+'</td><td>'+escape(item.rut || '—')+'</td><td>'+escape(item.nombres || '—')+'</td><td>'+escape(item.unidad || '—')+'</td><td>'+escape(item.grado || '—')+'</td><td class="mono text-nowrap">'+escape(Object.hasOwn(item,'patentes')?item.patentes || 'Sin patente':row.accion==='Actualizar'?'Conservar actual':'Sin patente')+'</td><td>'+escape(item.estado || '—')+'</td><td>'+(row.error?'<span class="text-danger">'+escape(row.error)+'</span>':escape(row.accion)+changes)+'</td></tr>';
       }
       el('staffPreviewTable').innerHTML=html+'</tbody></table></div>';
       el('staffImportApply').disabled=!preview;

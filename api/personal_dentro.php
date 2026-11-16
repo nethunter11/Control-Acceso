@@ -5,7 +5,7 @@ require_api_roles(['ADMIN','GUARDIA']);
 try{
   $pdo=db();$search=campo_texto($_GET['q'] ?? $_GET['rut'] ?? '','búsqueda',120);
   $puesto=campo_texto($_GET['puesto'] ?? '','puesto',60);
-  $cte="WITH ultimos AS (SELECT rut,tipo,modo,puesto,fecha_hora,id,ROW_NUMBER() OVER (PARTITION BY rut ORDER BY id DESC) AS rn FROM registros_acceso WHERE resultado='APROBADO')";
+  $cte="WITH ultimos AS (SELECT rut,tipo,modo,patente,puesto,fecha_hora,id,ROW_NUMBER() OVER (PARTITION BY rut ORDER BY id DESC) AS rn FROM registros_acceso WHERE resultado='APROBADO')";
   $from=" FROM ultimos t INNER JOIN funcionarios f ON f.rut=t.rut WHERE t.rn=1 AND t.tipo='ENTRADA'";
   $params=[];
   $pdo->beginTransaction();
@@ -14,7 +14,7 @@ try{
   if($puesto!==''){$from.=' AND t.puesto=?';$params[]=$puesto;}
   $query=$pdo->prepare($cte.' SELECT COUNT(*)'.$from);$query->execute($params);$total=(int)$query->fetchColumn();
   $pagination=tabla_pagina($_GET,$total);
-  $sql=$cte.' SELECT t.rut,f.nombres,f.unidad,f.grado,f.estado,t.modo,t.puesto,t.fecha_hora AS ultima_hora'.$from.' ORDER BY t.fecha_hora DESC,t.id DESC';
+  $sql=$cte.' SELECT t.rut,f.nombres,f.unidad,f.grado,f.estado,t.modo,t.patente,t.puesto,t.fecha_hora AS ultima_hora'.$from.' ORDER BY t.fecha_hora DESC,t.id DESC';
   // Los consumidores anteriores siguen recibiendo la lista completa si no solicitan página.
   if(!isset($_GET['page']) && !isset($_GET['limit']))$pagination=['total'=>$total,'page'=>1,'pages'=>1,'limit'=>$total,'offset'=>0,'from'=>$total?1:0,'to'=>$total];
   if(isset($_GET['page']) || isset($_GET['limit']))$sql.=' LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset'];

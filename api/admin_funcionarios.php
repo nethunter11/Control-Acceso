@@ -8,7 +8,7 @@ try {
   if($_SERVER['REQUEST_METHOD']==='GET') {
     if(($_GET['plantilla'] ?? '')==='1') {
       header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="plantilla_funcionarios.csv"');
-      echo "\xEF\xBB\xBFrut,nombres,unidad,grado,estado\r\n"; exit;
+      echo "\xEF\xBB\xBFrut,nombres,unidad,grado,estado,patentes\r\n"; exit;
     }
     $q=campo_texto($_GET['q'] ?? '','búsqueda',120);
     $state=campo_texto($_GET['estado'] ?? '','estado',8);
@@ -22,7 +22,7 @@ try {
     $pdo->beginTransaction();
     $query=$pdo->prepare('SELECT COUNT(*) FROM funcionarios'.$clause); $query->execute($params); $total=(int)$query->fetchColumn();
     $pagination=tabla_pagina($_GET,$total);$page=$pagination['page'];
-    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion,imagen FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
+    $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion,imagen,patentes FROM funcionarios'.$clause.' ORDER BY nombres,rut LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
     $query->execute($params); $rows=$query->fetchAll();
     foreach($rows as &$row) $row['revision']=funcionario_revision($row); unset($row);
     $pdo->commit();

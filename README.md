@@ -518,3 +518,50 @@ base oficial debe autorizarse después de revisar los movimientos posteriores.
 
 Desde esta publicación, cada cambio terminado se guarda con su commit. Las
 mejoras futuras se preparan en pruebas y se publican cuando el usuario lo solicita.
+
+## Patentes de funcionarios — pruebas, 16 de noviembre de 2026
+
+Cada ficha admite una patente en `funcionarios.patentes`, de cuatro letras
+mayúsculas y dos números, por ejemplo `PTCL21`. Un índice único impide asignarla
+a dos funcionarios. Las fichas sin patente pueden operar peatonalmente.
+
+En Validación, seleccionar Vehicular carga automáticamente la patente al consultar
+el RUT y la muestra en un campo de solo lectura. El operador confirma identidad,
+puesto, modo y patente antes de registrar. La API toma la patente del padrón;
+ignora cualquier patente enviada por el navegador. Si no existe una patente
+válida, rechaza el movimiento vehicular sin crear un registro.
+
+Cada movimiento vehicular guarda su propia copia en `registros_acceso.patente`.
+Los movimientos peatonales guardan NULL. Las patentes aparecen en la confirmación,
+el aviso de cuatro segundos, el comprobante, Personal dentro, el historial y el
+CSV de accesos. Si la ficha cambia después, los movimientos mantienen la patente
+registrada en su fecha. Una pareja de entrada/salida puede mostrar ambas patentes
+cuando son diferentes. Los registros anteriores conservan NULL, sin atribuirles
+una patente retrospectiva.
+
+Funcionarios permite consultar y modificar la patente. El CSV del padrón incluye
+`patentes`; la plantilla ofrece esa columna y su importación es opcional. Un CSV
+anterior que la omite conserva la patente actual; una celda explícitamente vacía
+la elimina. La vista previa valida formato, duplicados y pertenencia a otra ficha.
+La patente participa en la revisión concurrente de cambios. Visitas conserva su
+formulario y sus reglas de patente actuales.
+
+Después de preparar un respaldo SQL y comprobar su restauración, ejecutar solo
+en el entorno de pruebas:
+
+```powershell
+C:\xampp\php\php.exe tools\migrar-pruebas.php
+C:\xampp\php\php.exe tools\asignar-patentes-pruebas.php --aplicar
+```
+
+La migración `20261116_01_patentes_funcionarios.sql` es aditiva y repetible. La
+herramienta de asignación solo permite `control_acceso_pruebas`: genera valores
+distintos para las fichas sin patente y conserva los ya asignados. Mantiene los
+demás datos y sus fechas; no modifica la versión oficial. Las patentes generadas
+son datos de pruebas y sus asignaciones personales no se incluyen en GitHub.
+
+Comprobaciones principales: `tests/patentes_funcionarios.php`, los regresivos de
+funcionarios, imágenes, RUT, duplicados, historial, Personal dentro, visitas,
+exportaciones y concurrencia, más los tests de interfaz de operación,
+administración, tablas y ventanas temporales. Los datos temporales se retiran al
+terminar y se comparan las huellas de las tablas.

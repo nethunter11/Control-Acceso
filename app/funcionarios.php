@@ -3,6 +3,7 @@ require_once __DIR__.'/entrada.php';
 require_once __DIR__.'/rut_funcionario.php';
 require_once __DIR__.'/concurrencia.php';
 require_once __DIR__.'/imagenes_funcionarios.php';
+require_once __DIR__.'/patentes_funcionarios.php';
 
 final class FuncionarioConflicto extends RuntimeException {}
 function funcionario_validar(array $data): array {
@@ -15,13 +16,14 @@ function funcionario_validar(array $data): array {
     'grado'=>campo_texto($data['grado'] ?? '','grado',80),'estado'=>$state];
   // Los CSV y clientes anteriores conservan la imagen si no envían este campo.
   if(array_key_exists('imagen',$data))$staff['imagen']=funcionario_imagen_validar($data['imagen']);
+  if(array_key_exists('patentes',$data))$staff['patentes']=patente_funcionario_validar($data['patentes']);
   return $staff;
 }
 function funcionario_revision(array $row): string {
-  return hash('sha256',json_encode([$row['rut'],$row['nombres'],$row['unidad'],$row['grado'],$row['estado'],$row['fecha_actualizacion'],$row['imagen'] ?? null],JSON_THROW_ON_ERROR));
+  return hash('sha256',json_encode([$row['rut'],$row['nombres'],$row['unidad'],$row['grado'],$row['estado'],$row['fecha_actualizacion'],$row['imagen'] ?? null,$row['patentes'] ?? null],JSON_THROW_ON_ERROR));
 }
 function funcionario_buscar(PDO $pdo,string $rut,bool $lock=false): ?array {
-  $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion,imagen FROM funcionarios WHERE rut=?'.($lock?' FOR UPDATE':''));
+  $query=$pdo->prepare('SELECT rut,nombres,unidad,grado,estado,fecha_actualizacion,imagen,patentes FROM funcionarios WHERE rut=?'.($lock?' FOR UPDATE':''));
   $query->execute([$rut]); return $query->fetch() ?: null;
 }
 function funcionario_escribir(PDO $pdo,array $data,?string $revision): void {
@@ -30,9 +32,15 @@ function funcionario_escribir(PDO $pdo,array $data,?string $revision): void {
   if($revision===null && $current) throw new FuncionarioConflicto('El RUT ya está registrado. Busca y edita al funcionario.');
   if($revision!==null && (!$current || !hash_equals(funcionario_revision($current),$revision))) throw new FuncionarioConflicto('El funcionario cambió desde la consulta. Actualiza la información antes de guardar.');
   $image=array_key_exists('imagen',$data)?$data['imagen']:($current['imagen'] ?? null);
-  $values=[$data['nombres'],$data['unidad'] ?: null,$data['grado'] ?: null,$data['estado'],$image,$data['rut']];
-  if($current) $pdo->prepare('UPDATE funcionarios SET nombres=?,unidad=?,grado=?,estado=?,imagen=? WHERE rut=?')->execute($values);
-  else $pdo->prepare('INSERT INTO funcionarios (nombres,unidad,grado,estado,imagen,rut) VALUES (?,?,?,?,?,?)')->execute($values);
+  $plate=array_key_exists('patentes',$data)?$data['patentes']:($current['patentes'] ?? null);
+  $values=[$data['nombres'],$data['unidad'] ?: null,$data['grado'] ?: null,$data['estado'],$image,$plate,$data['rut']];
+  try{
+    if($current) $pdo->prepare('UPDATE funcionarios SET nombres=?,unidad=?,grado=?,estado=?,imagen=?,patentes=? WHERE rut=?')->execute($values);
+    else $pdo->prepare('INSERT INTO funcionarios (nombres,unidad,grado,estado,imagen,patentes,rut) VALUES (?,?,?,?,?,?,?)')->execute($values);
+  }catch(PDOException $error){
+    if((int)($error->errorInfo[1] ?? 0)===1062)throw new FuncionarioConflicto('La patente ya está asignada a otro funcionario.');
+    throw $error;
+  }
 }
 function funcionarios_preview(PDO $pdo,mixed $csv,mixed $mode): array {
   if(!is_string($csv) || strlen($csv)>1048576 || !preg_match('//u',$csv) || str_contains($csv,"\0")) throw new InvalidArgumentException('Usa un CSV UTF-8 de hasta 1 MB.');
@@ -47,8 +55,8 @@ function funcionarios_preview(PDO $pdo,mixed $csv,mixed $mode): array {
     if(!$header) throw new InvalidArgumentException('Faltan los encabezados del CSV.');
     $header=array_map(fn($name)=>mb_strtolower(trim((string)$name),'UTF-8'),$header);
     $required=['rut','nombres','unidad','grado','estado'];
-    if(count(array_unique($header))!==count($header) || array_diff($required,$header) || array_diff($header,array_merge($required,['fecha_actualizacion']))) throw new InvalidArgumentException('Encabezados requeridos: rut,nombres,unidad,grado,estado.');
-    $rows=[]; $seen=[]; $line=1; $create=0; $update=0; $errors=0;
+    if(count(array_unique($header))!==count($header) || array_diff($required,$header) || array_diff($header,array_merge($required,['fecha_actualizacion','patentes']))) throw new InvalidArgumentException('Encabezados requeridos: rut,nombres,unidad,grado,estado. Patentes es opcional.');
+    $rows=[]; $seen=[]; $seenPlates=[]; $line=1; $create=0; $update=0; $errors=0;
     while(($cells=fgetcsv($stream,0,$separator,'"',''))!==false) {
       $line++;
       if($cells===[null]) continue;
@@ -60,13 +68,19 @@ function funcionarios_preview(PDO $pdo,mixed $csv,mixed $mode): array {
         $row['data']=$data;
         if(isset($seen[$data['rut']])) throw new InvalidArgumentException('RUT repetido en el archivo (fila '.$seen[$data['rut']].').');
         $seen[$data['rut']]=$line;
+        if(!empty($data['patentes'])){
+          if(isset($seenPlates[$data['patentes']]))throw new InvalidArgumentException('Patente repetida en el archivo (fila '.$seenPlates[$data['patentes']].').');
+          $seenPlates[$data['patentes']]=$line;
+          $plateOwner=$pdo->prepare('SELECT rut FROM funcionarios WHERE patentes=? AND rut<>?');$plateOwner->execute([$data['patentes'],$data['rut']]);
+          if($plateOwner->fetchColumn()!==false)throw new InvalidArgumentException('La patente ya está asignada a otro funcionario.');
+        }
         $current=funcionario_buscar($pdo,$data['rut']);
         if($current && $mode==='crear') throw new InvalidArgumentException('El RUT ya existe. Elige crear y actualizar si deseas modificarlo.');
         $row['revision']=$current ? funcionario_revision($current) : null;
         $row['accion']=$current ? 'Actualizar' : 'Crear';
         if($current) {
-          foreach(['nombres','unidad','grado','estado'] as $field) {
-            if((string)$current[$field]!==$data[$field]) $row['cambios'][]=['campo'=>$field,'anterior'=>$current[$field] ?? '','nuevo'=>$data[$field]];
+          foreach(array_merge(['nombres','unidad','grado','estado'],array_key_exists('patentes',$data)?['patentes']:[]) as $field) {
+            if((string)$current[$field] !== (string)$data[$field]) $row['cambios'][]=['campo'=>$field,'anterior'=>$current[$field] ?? '','nuevo'=>$data[$field]];
           }
           $update++;
         } else $create++;

@@ -39,6 +39,7 @@ function respuesta_rut_sin_registro(string $rut, string $tipo, string $modo, str
     'modo' => $modo,
     'puesto' => $puesto,
     'funcionario' => null,
+    'patente' => null,
   ];
 }
 
@@ -73,12 +74,14 @@ try {
   // La última acción aprobada registrada determina la presencia, aunque haya fechas importadas o futuras.
   $pdo = db();
   $response = ejecutar_por_rut($pdo, 'funcionarios', $rut, function () use ($pdo, $rut, $tipo, $modo, $puesto, $operadorId): array {
-    $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado FROM funcionarios WHERE rut = ?");
+    $st = $pdo->prepare("SELECT rut, nombres, unidad, grado, estado, patentes FROM funcionarios WHERE rut = ? FOR UPDATE");
     $st->execute([$rut]);
     $f = $st->fetch();
     if (!$f) {
       return respuesta_rut_sin_registro($rut, $tipo, $modo, $puesto, 'RUT no registrado en la institución');
     }
+    // La patente procede del padrón, nunca de un valor enviado por el navegador.
+    $patente=$modo==='VEHICULO' && is_string($f['patentes']) && preg_match('/^[A-Z]{4}[0-9]{2}$/D',$f['patentes']) ? $f['patentes'] : null;
 
     $resultado = 'RECHAZADO';
     $motivo = null;
@@ -110,6 +113,7 @@ try {
           'modo' => $modo,
           'puesto' => $puesto,
           'funcionario' => $f,
+          'patente' => $patente,
         ];
       }
       if (!$last && $tipo === 'SALIDA') {
@@ -118,9 +122,12 @@ try {
       }
     }
 
-    $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, operador_id, resultado, motivo)
-                          VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)");
-    $st2->execute([$rut, $tipo, $modo, $puesto, $operadorId, $resultado, $motivo]);
+    if($modo==='VEHICULO' && $patente===null){
+      return array_replace(respuesta_rut_sin_registro($rut,$tipo,$modo,$puesto,'El funcionario no tiene una patente válida asignada. Solicita su actualización en Funcionarios.'),['funcionario'=>$f]);
+    }
+    $st2 = $pdo->prepare("INSERT INTO registros_acceso (rut, tipo, modo, fecha_hora, puesto, operador_id, resultado, motivo, patente)
+                          VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?)");
+    $st2->execute([$rut, $tipo, $modo, $puesto, $operadorId, $resultado, $motivo, $patente]);
     $eventId = (int)$pdo->lastInsertId();
     $saved = $pdo->prepare('SELECT fecha_hora FROM registros_acceso WHERE id=?');
     $saved->execute([$eventId]);
@@ -138,6 +145,7 @@ try {
       'fecha_hora' => $fechaHora,
       'operador_id' => $operadorId,
       'funcionario' => $f,
+      'patente' => $patente,
     ];
   });
   if ($response['guardado'] ?? false) $response['operador'] = $operador['username'];

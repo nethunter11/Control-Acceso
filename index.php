@@ -46,6 +46,11 @@ $activePage = 'validacion';
                 </div>
               </div>
             </div>
+              <div id="patenteFuncionarioCampo" class="mt-3" hidden>
+                <label class="form-label" for="patenteFuncionario">Patente del funcionario</label>
+                <input id="patenteFuncionario" class="form-control form-control-dark mono text-uppercase" readonly placeholder="Se carga al consultar el RUT" aria-describedby="patenteFuncionarioHint">
+                <div class="input-hint" id="patenteFuncionarioHint" aria-live="polite">Se utilizará la patente asignada en Funcionarios.</div>
+              </div>
             <div class="access-actions">
               <button id="btnEntrada" class="btn btn-success" onclick="registrar('ENTRADA')"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>Registrar entrada</button>
               <button id="btnSalida" class="btn btn-warning" onclick="registrar('SALIDA')"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Registrar salida</button>

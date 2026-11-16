@@ -21,7 +21,7 @@ try{
   $pdo->beginTransaction();
   $count=$pdo->prepare('SELECT COUNT(*)'.$from);$count->execute($params);
   $pagination=tabla_pagina($_GET,(int)$count->fetchColumn(),15);
-  $query=$pdo->prepare('SELECT r.id,r.rut,f.nombres,r.tipo,r.modo,r.fecha_hora,r.puesto,r.resultado,r.motivo,r.operador_id,u.username AS operador'.$from.' ORDER BY r.fecha_hora DESC,r.id DESC LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
+  $query=$pdo->prepare('SELECT r.id,r.rut,f.nombres,r.tipo,r.modo,r.patente,r.fecha_hora,r.puesto,r.resultado,r.motivo,r.operador_id,u.username AS operador'.$from.' ORDER BY r.fecha_hora DESC,r.id DESC LIMIT '.$pagination['limit'].' OFFSET '.$pagination['offset']);
   $query->execute($params);$items=$query->fetchAll();$pdo->commit();
   echo json_encode(['ok'=>true,'items'=>$items]+$pagination,JSON_UNESCAPED_UNICODE);
 }catch(InvalidArgumentException $error){

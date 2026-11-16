@@ -1,0 +1,3 @@
+ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS patentes VARCHAR(6) NULL DEFAULT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_funcionarios_patentes ON funcionarios (patentes);
+ALTER TABLE registros_acceso ADD COLUMN IF NOT EXISTS patente VARCHAR(6) NULL DEFAULT NULL;

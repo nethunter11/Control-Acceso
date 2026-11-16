@@ -6,6 +6,11 @@
   const controls=['rut','puesto','btnEntrada','btnSalida','btnConsultar','btnLimpiar','btnModoPeatonal','btnModoVehiculo'];
   function lock(value) {busy=value;for(const id of controls) if(el(id))el(id).disabled=value;el('fichaFuncionario').setAttribute('aria-busy',String(value));}
   function note(text,kind='info') {el('consultaMensaje').innerHTML='<div class="alert alert-'+kind+' mb-0">'+escape(text)+'</div>';}
+  function showPlate(plate='') {
+    el('patenteFuncionarioCampo').hidden=mode!=='VEHICULO';
+    el('patenteFuncionario').value=mode==='VEHICULO'?plate || '':'';
+    el('patenteFuncionarioHint').textContent=plate?'Se registrará automáticamente la patente asignada al funcionario.':'Consulta el RUT para cargar la patente asignada en Funcionarios.';
+  }
   async function post(path,payload) {
     const response=await fetch('/Control-Acceso/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data=await response.json();
@@ -47,7 +52,10 @@
     el('fichaFuncionario').querySelector?.('.consulta-foto')?.addEventListener('error',event=>{const picture=event.currentTarget;picture.hidden=true;picture.parentElement.setAttribute('role','img');picture.parentElement.setAttribute('aria-label','Sin imagen disponible');});
   }
   async function consult(rut) {
+    showPlate();
     const data=await post('validar_rut.php',{rut});
+    showPlate(data.ok && data.existe?data.funcionario.patentes:'');
+    if(mode==='VEHICULO' && data.ok && data.existe && !data.funcionario.patentes)el('patenteFuncionarioHint').textContent='El funcionario no tiene patente asignada. Actualiza su ficha en Funcionarios.';
     renderCard(data);
     if(!data.ok) note(data.error || 'No se pudo consultar.','danger');
     else if(!data.existe) note('RUT no registrado: '+data.rut,'warning');
@@ -74,7 +82,7 @@
     const title=(exit?'Salida':'Entrada')+(ok?' registrada':' rechazada');
     const name=data.funcionario?.nombres || 'Persona no registrada';
     const date=data.fecha_hora?FechasChile.fechaHora(data.fecha_hora):(data.guardado===false?'Sin nuevo registro':'Fecha no disponible');
-    el('resultado').innerHTML='<div class="event-card '+tone+'"><div class="event-head"><div><div class="func-label mb-1">Última operación</div><div class="event-title"><i class="bi '+(ok?(exit?'bi-box-arrow-right':'bi-box-arrow-in-right'):'bi-x-circle')+'" aria-hidden="true"></i> '+title+'</div></div><span class="event-badge '+(ok?(exit?'exit':'ok'):'bad')+'">'+(ok?'APROBADO':'RECHAZADO')+'</span></div><div class="event-value">'+escape(name)+'</div><div class="mono mt-1">'+escape(data.rut || requested.rut)+'</div><div class="event-subtitle">'+escape(data.puesto || requested.puesto)+' · '+(requested.modo==='VEHICULO'?'Vehicular':'Peatonal')+'</div><div class="small mt-2">'+escape(date)+(data.guardado && data.operador?' · '+escape(data.operador):'')+'</div>'+(data.motivo?'<div class="event-motivo">'+escape(data.motivo)+'</div>':'')+'</div>';
+    el('resultado').innerHTML='<div class="event-card '+tone+'"><div class="event-head"><div><div class="func-label mb-1">Última operación</div><div class="event-title"><i class="bi '+(ok?(exit?'bi-box-arrow-right':'bi-box-arrow-in-right'):'bi-x-circle')+'" aria-hidden="true"></i> '+title+'</div></div><span class="event-badge '+(ok?(exit?'exit':'ok'):'bad')+'">'+(ok?'APROBADO':'RECHAZADO')+'</span></div><div class="event-value">'+escape(name)+'</div><div class="mono mt-1">'+escape(data.rut || requested.rut)+'</div><div class="event-subtitle">'+escape(data.puesto || requested.puesto)+' · '+(requested.modo==='VEHICULO'?'Vehicular':'Peatonal')+(data.patente?' · Patente '+escape(data.patente):'')+'</div><div class="small mt-2">'+escape(date)+(data.guardado && data.operador?' · '+escape(data.operador):'')+'</div>'+(data.motivo?'<div class="event-motivo">'+escape(data.motivo)+'</div>':'')+'</div>';
   }
   window.registrar=async function (type) {
     if(busy || el('consultaFuncionario').open || RegistroPopup.abierta() || !['ENTRADA','SALIDA'].includes(type))return;
@@ -86,8 +94,9 @@
       const person=await consult(payload.rut);
       if(!person.ok || !person.existe)return;
       payload.rut=person.rut;
+      if(mode==='VEHICULO' && !person.funcionario.patentes){note('El funcionario no tiene patente asignada. Actualiza su ficha en Funcionarios.','warning');return;}
       const action=type==='ENTRADA'?'entrada':'salida';
-      const confirmed=await Dialogos.confirmar('Confirmar '+action,person.funcionario.nombres+' · RUT '+person.rut+' · '+payload.puesto+' · '+(mode==='VEHICULO'?'Vehicular':'Peatonal'));
+      const confirmed=await Dialogos.confirmar('Confirmar '+action,person.funcionario.nombres+' · RUT '+person.rut+' · '+payload.puesto+' · '+(mode==='VEHICULO'?'Vehicular · Patente '+person.funcionario.patentes:'Peatonal'));
       if(!confirmed)return;
       const data=await post('registrar_evento.php',payload);
       if(!data.ok){note(data.error || 'No se pudo registrar el movimiento.','danger');return;}
@@ -100,7 +109,7 @@
         tono:approved?(exit?'salida':'entrada'):'rechazo',etiqueta:'Datos del funcionario',
         funcionario:true,imagen_url:person.funcionario.imagen_url,
         nombre:funcionario.nombres,rut:data.rut || payload.rut,activo:funcionario.estado?funcionario.estado==='ACTIVO':person.activo,
-        campos:[['Unidad',funcionario.unidad],['Grado',funcionario.grado]],
+        campos:[['Unidad',funcionario.unidad],['Grado',funcionario.grado],...(data.patente?[['Patente',data.patente]]:[])],
         estado:approved?(exit?'Fuera del recinto':'Dentro del recinto'):'Movimiento rechazado',
         detalle:data.motivo || (approved?'Movimiento registrado correctamente.':'No se registró el movimiento.'),fecha:data.guardado?data.fecha_hora:null
       });
@@ -111,23 +120,30 @@
       lock(false);
       if(popupClosed)popupClosed.then(()=>{
         if(RegistroPopup.abierta() || busy)return;
-        if(clearRutAfterClose){el('rut').value='';el('fichaFuncionario').textContent='';}
+        if(clearRutAfterClose){el('rut').value='';el('fichaFuncionario').textContent='';showPlate();}
         el('rut').focus();
       });
     }
   };
-  window.setModo=function (value) {
+  window.setModo=async function (value) {
     if(busy || !['PEATONAL','VEHICULO'].includes(value))return;
     mode=value;
     for(const [id,current] of [['btnModoPeatonal','PEATONAL'],['btnModoVehiculo','VEHICULO']]){el(id).classList.toggle('active',current===value);el(id).setAttribute('aria-pressed',String(current===value));}
+    showPlate();
+    if(mode==='VEHICULO' && el('rut').value.trim()){
+      lock(true);
+      try{await consult(el('rut').value.trim());}
+      catch(error){showPlate();note(error.message,'danger');}
+      finally{lock(false);}
+    }
   };
   window.limpiar=function () {
     if(busy)return;
-    el('rut').value='';for(const id of ['consultaMensaje','fichaFuncionario','resultado'])el(id).textContent='';el('rut').focus();
+    el('rut').value='';showPlate();for(const id of ['consultaMensaje','fichaFuncionario','resultado'])el(id).textContent='';el('rut').focus();
   };
   document.addEventListener('DOMContentLoaded',()=>{
     el('consultaFuncionario').addEventListener('close',()=>{el('fichaFuncionario').textContent='';el('rut').focus();});
-    el('rut').addEventListener('input',()=>{el('fichaFuncionario').innerHTML='';el('consultaMensaje').textContent='';});
+    el('rut').addEventListener('input',()=>{showPlate();el('fichaFuncionario').innerHTML='';el('consultaMensaje').textContent='';});
     el('rut').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.soloConsultar();}});
     document.getElementById('quickSearch')?.addEventListener('keydown',event=>{if(event.key==='Enter'){el('rut').value=event.target.value.trim();window.soloConsultar();}});
   });

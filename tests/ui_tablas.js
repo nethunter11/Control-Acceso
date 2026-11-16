@@ -23,13 +23,14 @@ async function comprobarTablas(sources,runtime){
     const response=(url,label='Persona')=>{
       const requested=Number(/[?&]page=(\d+)/.exec(url)?.[1] || 1),limit=Number(/[?&]limit=(\d+)/.exec(url)?.[1] || 25);
       const total=url.includes('NO_EXISTE')?0:61,pages=Math.max(1,Math.ceil(total/limit)),page=Math.min(requested,pages);
-      return{ok:true,json:async()=>({ok:true,total,pages,page,limit,from:total?(page-1)*limit+1:0,to:Math.min(total,page*limit),puestos:['Pórtico Norte'],items:total?[{nombres:label,rut:'12345678',tipo_movimiento:'ENTRADA',entrada:'2001-02-03 23:00:00',salida:'2001-02-04 01:00:00',puesto:'Pórtico Norte',puesto_salida:'Pórtico Sur',resultado:'APROBADO',operador_entrada:'ADMIN',operador_salida:'GUARDIA'}]:[]})};
+      return{ok:true,json:async()=>({ok:true,total,pages,page,limit,from:total?(page-1)*limit+1:0,to:Math.min(total,page*limit),puestos:['Pórtico Norte'],items:total?[{nombres:label,rut:'12345678',tipo_movimiento:'ENTRADA',patente_entrada:'PTCL21',patente_salida:'PTCL21',entrada:'2001-02-03 23:00:00',salida:'2001-02-04 01:00:00',puesto:'Pórtico Norte',puesto_salida:'Pórtico Sur',resultado:'APROBADO',operador_entrada:'ADMIN',operador_salida:'GUARDIA'}]:[]})};
     };
     const fetch=async(url)=>{calls.push(url);if(defer){defer=false;return new Promise(resolve=>{deferred=()=>resolve(response(url,'Anterior'));});}return response(url,'<script>Nueva</script>');};
     new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Tablas','FechasChile',sources.records)(d.window,d.document,fetch,runtime.URLSearchParams,runtime.AbortController,d.setTimer,d.clearTimer,d.table,{...dates,hoy:()=>'2026-11-07'});
     d.document.events.DOMContentLoaded();await flush();
     check(calls[0].includes('desde=2026-11-07') && calls[0].includes('hasta=2026-11-07'),'No se usa el día chileno por defecto.');
     check(d.el('recordsBody').innerHTML.includes('&lt;script&gt;') && d.el('recordsBody').innerHTML.includes('Salida: Pórtico Sur'),'La tabla pierde escape o puesto de salida.');
+    check(d.el('recordsBody').innerHTML.includes('PTCL21'),'El historial no muestra la patente guardada.');
     check(d.el('recordsBody').innerHTML.includes('03-02-2001 23:00') && d.el('recordsBody').innerHTML.includes('04-02-2001 01:00'),'El historial no formatea las dos fechas de una permanencia nocturna.');
     await d.window.cargarUltimos(3);check(d.el('recordsSummary').textContent.includes('51–61 de 61') && d.el('recordsNext').disabled,'No se navega hasta la última página.');
     d.el('f_rut').value='NO_EXISTE';await d.window.cargarUltimos(1);check(d.el('recordsSummary').textContent.startsWith('0–0 de 0') && d.el('recordsBody').innerHTML.includes('No hay movimientos'),'No se comunica una búsqueda vacía.');
@@ -44,10 +45,11 @@ async function comprobarTablas(sources,runtime){
     const fetch=async(url)=>{
       calls.push(url);if(fail)throw new Error('Sin conexión');
       const page=Number(/[?&]page=(\d+)/.exec(url)?.[1] || 1),filtered=url.includes('q=Persona');
-      return{ok:status===200,status,json:async()=>status===200?{ok:true,page,pages:3,limit:25,total:filtered?1:61,total_dentro:72,from:1,to:filtered?1:25,puestos:[],checked_at:'2026-11-07 22:00:00',items:[{nombres:'<b>Persona</b>',rut:'12345678',estado:'INACTIVO',ultima_hora:'2001-02-03 23:00:00'}]}:{ok:false,error:'Debes iniciar sesión.'}};
+      return{ok:status===200,status,json:async()=>status===200?{ok:true,page,pages:3,limit:25,total:filtered?1:61,total_dentro:72,from:1,to:filtered?1:25,puestos:[],checked_at:'2026-11-07 22:00:00',items:[{nombres:'<b>Persona</b>',rut:'12345678',estado:'INACTIVO',patente:'PTCL21',ultima_hora:'2001-02-03 23:00:00'}]}:{ok:false,error:'Debes iniciar sesión.'}};
     };
     new Function('window','document','fetch','URLSearchParams','AbortController','setTimeout','clearTimeout','Tablas','FechasChile',sources.inside)(d.window,d.document,fetch,runtime.URLSearchParams,runtime.AbortController,d.setTimer,d.clearTimer,d.table,dates);
     d.document.events.DOMContentLoaded();await flush();
+    check(d.el('tablaDentro').innerHTML.includes('PTCL21'),'Personal dentro no muestra la patente del ingreso.');
     check(d.el('cntDentro').textContent===72 && d.el('tablaDentro').innerHTML.includes('Funcionario inactivo'),'El contador o estado administrativo no se conserva.');
     check(d.el('tablaDentro').innerHTML.includes('&lt;b&gt;') && calls[0].includes('page=1'),'La presencia no se pagina o interpreta HTML.');
     d.el('d_rut').value='Persona';d.el('d_rut').events.input();
